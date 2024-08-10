@@ -14,11 +14,11 @@ bool check(const float *h_x,
            const float *h_a,
            const float *h_b,
            const float *h_y,
-           uint32_t x_w, uint32_t a_h) {
+           uint32_t a_w, uint32_t a_h) {
     for (uint32_t j = 0; j < a_h; ++j) {
         float sum = 0.f;
-        for (uint32_t p = 0; p < x_w; ++p) {
-            sum += h_x[p] * h_a[j * x_w + p];
+        for (uint32_t p = 0; p < a_w; ++p) {
+            sum += h_x[p] * h_a[j * a_w + p];
         }
         sum += h_b[j];
         if (std::fabs(sum - h_y[j]) / std::fabs(sum) > 1e-5f) {
@@ -36,36 +36,36 @@ int main() {
 
     using namespace lotus;
 
-    uint32_t x_w = 499;
+    uint32_t a_w = 499;
     uint32_t a_h = 499;
 
     float *h_x, *h_a, *h_y, *h_b;
-    cudaMallocHost(&h_x, x_w * sizeof(float));
-    cudaMallocHost(&h_a, x_w * a_h * sizeof(float));
+    cudaMallocHost(&h_x, a_w * sizeof(float));
+    cudaMallocHost(&h_a, a_w * a_h * sizeof(float));
     cudaMallocHost(&h_y, a_h * sizeof(float));
     cudaMallocHost(&h_b, a_h * sizeof(float));
 
-    random_init(h_a, x_w * a_h);
-    random_init(h_x, x_w);
+    random_init(h_a, a_w * a_h);
+    random_init(h_x, a_w);
     random_init(h_b, a_h);
 
     float *d_x, *d_a, *d_y, *d_b;
-    cudaMalloc(&d_x, x_w * sizeof(float));
-    cudaMalloc(&d_a, x_w * a_h * sizeof(float));
+    cudaMalloc(&d_x, a_w * sizeof(float));
+    cudaMalloc(&d_a, a_w * a_h * sizeof(float));
     cudaMalloc(&d_y, a_h * sizeof(float));
     cudaMalloc(&d_b, a_h * sizeof(float));
 
-    cudaMemcpy(d_a, h_a, x_w * a_h * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_x, h_x, x_w * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_a, h_a, a_w * a_h * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_x, h_x, a_w * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, h_b, a_h * sizeof(float), cudaMemcpyHostToDevice);
 
     StreamPool pool(1);
 
-    sfgemva<<<FGEMVA_GRID(a_h), FGEMVA_BLOCK(), 0, pool.Stream()>>>(d_x, d_a, d_b, d_y, x_w, a_h, true, ActivationFunction::NONE);
+    sfgemva<<<FGEMVA_GRID(a_h), FGEMVA_BLOCK(), 0, pool.Stream()>>>(d_x, d_a, d_b, d_y, a_h, a_w, true, ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, a_h * sizeof(float), cudaMemcpyDeviceToHost);
 
-    bool chk = check(h_x, h_a, h_b, h_y, x_w, a_h);
+    bool chk = check(h_x, h_a, h_b, h_y, a_w, a_h);
 
     printf("vector_y check: %s\n", chk ? "OK" : "Failed");
 

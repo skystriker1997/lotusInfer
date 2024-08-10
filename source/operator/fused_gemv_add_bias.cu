@@ -29,7 +29,7 @@ namespace lotus {
 
 
 
-    __global__ void sfgemva(const float *x, const float *a, const float* b, float *y, uint32_t a_w, uint32_t a_h, bool use_bias, ActivationFunction af) 
+    __global__ void sfgemva(const float *x, const float *a, const float* b, float *y, uint32_t a_h, uint32_t a_w, bool use_bias, ActivationFunction af) 
     {
         float result = 0;
 
