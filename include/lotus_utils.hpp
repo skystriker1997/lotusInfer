@@ -8,6 +8,19 @@
 #include <type_traits>
 #include <cublas_v2.h>
 #include <vector>
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
+#include <numeric>
+#include <string>
+#include <queue>
+#include <set>
+#include <map>
+#include <functional>
+#include <iostream>
+#include <fstream>
 
 
 #define CUDA_CHECK(err)                                                                                                                         \
@@ -25,6 +38,11 @@
 
 
 namespace lotus {
+
+    enum ActivationFunction {
+        NONE,
+        RELU
+    };
 
 
     template<typename T>

@@ -12,9 +12,6 @@ find_package(fmt REQUIRED)
 find_package(Catch2 3 REQUIRED)
 find_package (glog 0.7.1 REQUIRED)
 find_package(xtensor REQUIRED)
-find_package(xtensor-blas REQUIRED)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
 
 
 include_directories(include/)
@@ -24,9 +21,24 @@ file(GLOB OPT "source/operator/*.cu")
 add_library(operator ${OPT})
 target_link_libraries(operator PUBLIC glog::glog fmt::fmt CUDA::cudart CUDA::cublas)
 
+
 add_library(tensor source/tensor.cpp)
 target_link_libraries(tensor PUBLIC glog::glog fmt::fmt CUDA::cudart)
 
+
+file(GLOB LAYER "source/layer/*.cu" "source/layer/*.cpp")
+add_library(layer ${LAYER})
+target_link_libraries(layer PUBLIC operator tensor)
+
+
+add_library(pnnx source/pnnx/ir.cpp source/pnnx/storezip.cpp source/pnnx/utils.cpp)
+
+
+add_library(graph source/graph.cpp)
+target_link_libraries(graph PUBLIC layer pnnx)
+
+
 add_subdirectory(test)
+add_subdirectory(alexnet_demo)
 
 

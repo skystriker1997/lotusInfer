@@ -1,8 +1,5 @@
 #pragma once
-
 #include "lotus_utils.hpp"
-#include <vector>
-#include <numeric>
 
 
 
@@ -11,15 +8,14 @@ namespace lotus {
     class Tensor {
         private:
         std::vector<uint32_t> shape_;
-        std::vector<uint32_t> strides_;
         std::shared_ptr<float> data_;
         uint32_t offset_;
-        bool is_batch_;
+        uint32_t size_;
         
         public:
-        Tensor() = delete;
+        Tensor() = default;
         Tensor(const std::vector<uint32_t>& shape);
-        Tensor(const std::vector<uint32_t>& shape, std::vector<char>& data); 
+        Tensor(const std::vector<uint32_t>& shape, const std::vector<char>& data); 
         Tensor(const Tensor& other) = default;
         Tensor(Tensor&& other) noexcept;
 
@@ -27,13 +23,14 @@ namespace lotus {
         Tensor& operator=(const Tensor& rhs) = default;
         Tensor& operator=(Tensor&& rhs) noexcept;
 
+        void AssignData(const std::vector<float>& data);
+        void Reshape(const std::vector<uint32_t>& shape);
         size_t DimSize() const;
-        uint32_t Dim(uint32_t i) const;
-        uint32_t Stride(uint32_t i) const;
+        uint32_t Dim(size_t i) const;
+        uint32_t Size() const;
         float* Data();
         Tensor Element(uint32_t i);
 
-        static std::vector<uint32_t> ComputeStrides(const std::vector<uint32_t>& shape);
     };
 
 }
