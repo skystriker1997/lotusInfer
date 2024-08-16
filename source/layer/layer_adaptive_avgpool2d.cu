@@ -33,6 +33,7 @@ namespace lotus {
             Tensor x = x_batch->tensor_.Element(i);
             Tensor y = y_batch->tensor_.Element(i);
 
+
             uint32_t x_c = x.Dim(0);
             uint32_t x_h = x.Dim(1);
             uint32_t x_w = x.Dim(2);

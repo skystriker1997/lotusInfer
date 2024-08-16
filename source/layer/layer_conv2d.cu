@@ -27,13 +27,8 @@ namespace lotus {
         stride_w_ = stride_w;
         padding_h_ = padding_h;
         padding_w_ = padding_w;
-        af_ = ActivationFunction::NONE;
     };
 
-
-    void LayerConv2d::SetActivation(ActivationFunction af) {
-        af_ = af;
-    };
 
 
     void LayerConv2d::Forward() {
@@ -70,6 +65,7 @@ namespace lotus {
                                                                                       padding_h_, padding_w_, 
                                                                                       af_
                                                                                      );
+
         }
         cudaDeviceSynchronize();
     };

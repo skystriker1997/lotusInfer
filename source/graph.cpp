@@ -47,11 +47,9 @@ namespace lotus {
 
         pnnx::Graph pnnx_graph;
 
-        // std::cout << "pnnx is to load the model" << std::endl;
-
         CHECK(pnnx_graph.load(param_path, bin_path) == 0) << "graph fails to load the model and coefficients";
 
-        // std::cout << "pnnx loaded the model" << std::endl;
+        std::vector<std::string> layer_need_relu_activation;
 
         for(pnnx::Operand *opd: pnnx_graph.operands) {
 
@@ -82,6 +80,7 @@ namespace lotus {
                     for(pnnx::Operator* _consumer : consumer->outputs[0]->consumers) {
                         operand->consumers_.emplace_back(_consumer->name);
                     }
+                    layer_need_relu_activation.emplace_back(opd->producer->name);
                 }
             }
 
@@ -115,6 +114,10 @@ namespace lotus {
             } else {
                 CHECK(false) << fmt::format("lotusInfer does not support layer {} up to now", opt->type);
             }
+        }
+
+        for(auto& layer: layer_need_relu_activation) {
+            layers_[layer]->SetActivation(ActivationFunction::RELU);
         }
 
         TopoSortLayers();

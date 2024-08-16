@@ -39,9 +39,9 @@ void PreprocessImage(cv::Mat &image, std::vector<float> &result) {
     cv::Mat channels[3];
     cv::split(image_crop, channels); 
 
-    channels[0] = (channels[0] - mean[0]) / stddev[0]; 
-    channels[1] = (channels[1] - mean[1]) / stddev[1]; 
-    channels[2] = (channels[2] - mean[2]) / stddev[2]; 
+    channels[0] = (channels[0]/255.f - mean[0]) / stddev[0]; 
+    channels[1] = (channels[1]/255.f - mean[1]) / stddev[1]; 
+    channels[2] = (channels[2]/255.f - mean[2]) / stddev[2]; 
 
     memcpy(&result[0], channels[0].data, sizeof(float)*(224*224));
     memcpy(&result[224*224], channels[1].data, sizeof(float)*(224*224));
@@ -102,8 +102,12 @@ int main(int argc, char* argv[]) {
 
     input_file.close();
 
-    auto index = xt::argmax(probabilities)();
-    std::cout << fmt::format("most likely to be {} with likelyhood of {}%\n", classes[index], probabilities(index)*100);
+    for(int i=0; i<5; ++i) {
+        auto index = xt::argmax(probabilities)();
+        std::cout << fmt::format("with {} percent likelyhood to be {}\n", probabilities(index)*100, classes[index]);
+        probabilities(index) = 0;
+    }
+    
 
     return 0;
 }

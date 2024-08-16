@@ -25,13 +25,8 @@ namespace lotus {
         } else {
             bias_ = Tensor();
         }
-        af_ = ActivationFunction::NONE;
     };
 
-
-    void LayerLinear::SetActivation(ActivationFunction af) {
-        af_ = af;
-    };
 
         
     void LayerLinear::Forward() {

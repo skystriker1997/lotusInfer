@@ -10,7 +10,6 @@ namespace lotus {
         uint32_t out_features_;
         bool use_bias_;
         Tensor bias_;
-        ActivationFunction af_;
 
         public:
         LayerLinear(
@@ -21,7 +20,6 @@ namespace lotus {
                     const bool use_bias, const std::vector<char>& bias
                     );
                     
-        void SetActivation(ActivationFunction af);
 
         void Forward() override;
         ~LayerLinear() override = default;

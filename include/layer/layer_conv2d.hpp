@@ -14,7 +14,6 @@ namespace lotus {
         uint32_t stride_w_;
         uint32_t padding_h_; 
         uint32_t padding_w_;
-        ActivationFunction af_;
 
         public:
         LayerConv2d(const std::string& name,
@@ -26,7 +25,6 @@ namespace lotus {
                     const uint32_t stride_h, const uint32_t stride_w,
                     const uint32_t padding_h, const uint32_t padding_w);
                                  
-        void SetActivation(ActivationFunction af);
         
         void Forward() override;
         ~LayerConv2d() override = default;

@@ -13,6 +13,7 @@ namespace lotus {
         std::vector<std::string> outputs_name_;
         std::vector<std::shared_ptr<Operand>> inputs_;
         std::vector<std::shared_ptr<Operand>> outputs_;
+        ActivationFunction af_ = ActivationFunction::NONE;
 
         public: 
         Layer() = default;
@@ -22,6 +23,7 @@ namespace lotus {
         const std::vector<std::string>& InputsName() {return inputs_name_;};
         const std::vector<std::string>& OutputsName() {return outputs_name_;};
         virtual void Forward() {};
+        void SetActivation(ActivationFunction af) {af_ = af;};
         virtual ~Layer() = default;
     };
 }
