@@ -5,7 +5,7 @@ namespace lotus {
 
 
      __device__ __forceinline__ void reduce_add(float* x_tile, float* a_tile, float& result) 
-    {
+    {  
         #pragma unroll
         for(uint32_t i=0; i<4; ++i) {
             a_tile[threadIdx.x*4+i] *= x_tile[threadIdx.x*4+i];
@@ -22,8 +22,8 @@ namespace lotus {
                 } else {
                     a_tile[threadIdx.x] += (a_tile[threadIdx.x+n]+a_tile[threadIdx.x+n*2]+a_tile[threadIdx.x+n*3]);
                 }
-            __syncthreads();
             }
+            __syncthreads();
         }
     }
 
