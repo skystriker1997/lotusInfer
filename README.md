@@ -13,7 +13,7 @@
 
 ## Overview
 
-lotusInfer is a lite-weight deep learning inference framework, supporting CUDA accleration. The framework includes implemented CUDA operators like 2D-convolution, matrix-vector multiplication and pooling, with ongoing development of additional operators such as expression and transposed 2D-convolution. The long-term goal is to make this framework powerful enough to support Large Language Model (LLM) inference.
+lotusInfer is a lite-weight deep learning inference framework, supporting CUDA accleration. The framework includes implemented CUDA operators like 2D-convolution, matrix-vector multiplication and pooling, with ongoing development of additional operators such as transposed 2D-convolution. The long-term goal is to make this framework powerful enough to support forefront Large Language Model (LLM) inference.
 
 
 ## Main Features
@@ -42,15 +42,18 @@ $ cmake .. && make -j
 ```
 
 ## AlexNet Demo
-![Samoyed](models/alexnet/dog.jpg)
+![Samoyed](models/alexnet/Samoyed.jpg)
 ![alexnet_speedtest](records/alexnet%20timing.png)
-lotusInfer tooks 0.599 seconds to correctly figure out the type of image object 
+lotusInfer tooks only 0.599 seconds to correctly figure out the type of image object with AlexNet 
+
+## resnet18 Demo
+![German_Shepherd](models/resnet/German_Shepherd.jpg)
+![resnet18_speedtest](records/Recording_resnet_infer.gif)
+lotusInfer tooks only 0.66 seconds to correctly figure out the type of image object with resnet18
 
 ## TO-DO List
-1. Implement transposed-2D convolution 
-2. Implement expression operator
-3. Implement transformer to support LLM
-4. ...
+1. Implement transposed-2D convolution to support UNet
+2. Implement transformer to support LLM
 
 
 
