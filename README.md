@@ -48,7 +48,7 @@ lotusInfer tooks only 0.599 seconds to correctly figure out the type of image ob
 
 ## resnet18 Demo
 ![German_Shepherd](models/resnet/German_Shepherd.jpg)
-![resnet18_speedtest](records/Recording_resnet_infer.gif)
+![resnet18_speedtest](records/Recording_resnet_infer.gif)  
 lotusInfer tooks only 0.66 seconds to correctly figure out the type of image object with resnet18
 
 ## TO-DO List
