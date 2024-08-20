@@ -44,12 +44,12 @@ $ cmake .. && make -j
 ## AlexNet Demo
 ![Samoyed](models/alexnet/Samoyed.jpg)
 ![alexnet_speedtest](records/alexnet%20timing.png)
-lotusInfer tooks only 0.599 seconds to correctly figure out the type of image object with AlexNet 
+lotusInfer takes only 0.599 seconds to correctly figure out the type of image object with AlexNet 
 
 ## resnet18 Demo
 ![German_Shepherd](models/resnet/German_Shepherd.jpg)
 ![resnet18_speedtest](records/Recording_resnet_infer.gif)  
-lotusInfer tooks only 0.66 seconds to correctly figure out the type of image object with resnet18
+lotusInfer takes only 0.66 seconds to correctly figure out the type of image object with resnet18
 
 ## TO-DO List
 1. Implement transposed-2D convolution to support UNet
