@@ -2,7 +2,7 @@
 
 namespace lotus {
 
-    LayerConv2d:: LayerConv2d(const std::string& name,
+    Conv2dLayer:: Conv2dLayer(const std::string& name,
                               const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                               const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
                               const std::vector<char>& kernel, 
@@ -31,13 +31,13 @@ namespace lotus {
 
 
 
-    void LayerConv2d::Forward() {
+    void Conv2dLayer::Forward() {
         auto x_batch = inputs_[0];
         auto y_batch = outputs_[0];
 
         size_t batch_size = x_batch->tensor_.Dim(0);
         StreamPool pool(batch_size);
-        for(uint32_t i=0; i<x_batch->tensor_.Dim(0); ++i) {
+        for(uint32_t i=0; i<batch_size; ++i) {
             if(i != 0) {
                 pool.SetStream();
             }
@@ -71,7 +71,7 @@ namespace lotus {
     };
 
 
-    std::shared_ptr<LayerConv2d> MakeLayerConv2d(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
+    std::shared_ptr<Conv2dLayer> MakeConv2dLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
         CHECK(opt->inputs.size()==1) << "conv2d layer gets more than 1 input";  
         CHECK(opt->outputs.size()==1) << "conv2d layer gets more than 1 output";
 
@@ -140,7 +140,7 @@ namespace lotus {
 
         std::vector<char> empty_bias {};
 
-        return std::make_shared<LayerConv2d>(opt->name,
+        return std::make_shared<Conv2dLayer>(opt->name,
                                              inputs_name, outputs_name,
                                              inputs, outputs,
                                              kernel->second.data,

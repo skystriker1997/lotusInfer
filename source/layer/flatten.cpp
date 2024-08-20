@@ -3,7 +3,7 @@
 
 namespace lotus {
 
-    LayerFlatten::LayerFlatten(
+    FlattenLayer::FlattenLayer(
                             const std::string& name,
                             const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                             const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs
@@ -17,7 +17,7 @@ namespace lotus {
     };
 
         
-    void LayerFlatten::Forward() {
+    void FlattenLayer::Forward() {
         auto x_batch = inputs_[0];
         auto y_batch = outputs_[0];
 
@@ -33,7 +33,7 @@ namespace lotus {
     };
 
 
-    std::shared_ptr<LayerFlatten> MakeLayerFlatten(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
+    std::shared_ptr<FlattenLayer> MakeFlattenLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
         CHECK(opt->inputs.size()==1) << "flatten layer gets more than 1 input";  
         CHECK(opt->outputs.size()==1) << "flatten layer gets more than 1 output";
 
@@ -53,7 +53,7 @@ namespace lotus {
         std::vector<std::shared_ptr<Operand>> inputs = {input->second};
         std::vector<std::shared_ptr<Operand>> outputs = {output->second};
 
-        return std::make_shared<LayerFlatten>(opt->name,
+        return std::make_shared<FlattenLayer>(opt->name,
                                              inputs_name, outputs_name,
                                              inputs, outputs);
     };

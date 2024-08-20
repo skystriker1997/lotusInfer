@@ -1,5 +1,10 @@
 #pragma once
 #include "lotus_utils.hpp"
+#include "xtensor/xarray.hpp"
+#include "xtensor/xio.hpp"
+#include "xtensor/xview.hpp"
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xsort.hpp>
 
 
 
@@ -30,6 +35,7 @@ namespace lotus {
         uint32_t Size() const;
         float* Data();
         Tensor Element(uint32_t i);
+        void Print();
 
     };
 

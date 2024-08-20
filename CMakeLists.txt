@@ -23,7 +23,8 @@ target_link_libraries(operator PUBLIC glog::glog fmt::fmt CUDA::cudart CUDA::cub
 
 
 add_library(tensor source/tensor.cpp)
-target_link_libraries(tensor PUBLIC glog::glog fmt::fmt CUDA::cudart)
+target_include_directories(tensor PUBLIC ${xtensor_INCLUDE_DIRS})
+target_link_libraries(tensor PUBLIC glog::glog fmt::fmt CUDA::cudart xtensor)
 
 
 file(GLOB LAYER "source/layer/*.cu" "source/layer/*.cpp")
@@ -39,6 +40,6 @@ target_link_libraries(graph PUBLIC layer pnnx)
 
 
 add_subdirectory(test)
-add_subdirectory(alexnet_demo)
+add_subdirectory(demo/image_classification)
 
 

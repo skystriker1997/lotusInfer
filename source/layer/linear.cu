@@ -3,7 +3,7 @@
 
 namespace lotus {
 
-    LayerLinear::LayerLinear(
+    LinearLayer::LinearLayer(
                             const std::string& name,
                             const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                             const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
@@ -29,13 +29,13 @@ namespace lotus {
 
 
         
-    void LayerLinear::Forward() {
+    void LinearLayer::Forward() {
         auto x_batch = inputs_[0];
         auto y_batch = outputs_[0];
 
         size_t batch_size = x_batch->tensor_.Dim(0);
         StreamPool pool(batch_size);
-        for(int i=0; i<x_batch->tensor_.Dim(0); ++i) {
+        for(int i=0; i<batch_size; ++i) {
             Tensor x = x_batch->tensor_.Element(i);
             Tensor y = y_batch->tensor_.Element(i);
 
@@ -44,14 +44,13 @@ namespace lotus {
             }
 
             sfgemva<<<FGEMVA_GRID(out_features_), FGEMVA_BLOCK(), 0, pool.Stream()>>>(x.Data(), weight_.Data(), bias_.Data(), y.Data(), out_features_, in_features_, use_bias_, af_);
-
             
         }
         cudaDeviceSynchronize();
     };
 
 
-    std::shared_ptr<LayerLinear> MakeLayerLinear(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
+    std::shared_ptr<LinearLayer> MakeLinearLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
         CHECK(opt->inputs.size()==1) << "linear layer gets more than 1 input";  
         CHECK(opt->outputs.size()==1) << "linear layer gets more than 1 output";
 
@@ -91,7 +90,7 @@ namespace lotus {
 
         std::vector<char> empty_bias {};
 
-        return std::make_shared<LayerLinear>(opt->name,
+        return std::make_shared<LinearLayer>(opt->name,
                                              inputs_name, outputs_name,
                                              inputs, outputs,
                                              weight->second.data, in_features->second.i, out_features->second.i,

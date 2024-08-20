@@ -5,7 +5,7 @@
 
 
 namespace lotus {
-    class LayerConv2d: public Layer {
+    class Conv2dLayer: public Layer {
         private:
         Tensor kernel_;
         bool use_bias_;
@@ -16,7 +16,7 @@ namespace lotus {
         uint32_t padding_w_;
 
         public:
-        LayerConv2d(const std::string& name,
+        Conv2dLayer(const std::string& name,
                     const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                     const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
                     const std::vector<char>& kernel, 
@@ -27,9 +27,9 @@ namespace lotus {
                                  
         
         void Forward() override;
-        ~LayerConv2d() override = default;
+        ~Conv2dLayer() override = default;
     };
 
 
-    std::shared_ptr<LayerConv2d> MakeLayerConv2d(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands);
+    std::shared_ptr<Conv2dLayer> MakeConv2dLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands);
 }

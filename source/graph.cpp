@@ -2,11 +2,9 @@
 
 namespace lotus {
 
-
     void Graph::TopoSortLayers() {
 
         std::queue<std::shared_ptr<Layer>> topo_queue;
-
         std::map<std::string, int> in_degrees;
 
         for(auto &[name, layer]: layers_) {
@@ -47,7 +45,7 @@ namespace lotus {
 
         pnnx::Graph pnnx_graph;
 
-        CHECK(pnnx_graph.load(param_path, bin_path) == 0) << "graph fails to load the model and coefficients";
+        CHECK(pnnx_graph.load(param_path, bin_path) == 0) << "incorrect model parameter path or model coefficient path";
 
         std::vector<std::string> layer_need_relu_activation;
 
@@ -87,12 +85,12 @@ namespace lotus {
             operands_.insert({operand->name_, operand});
 
             if(opd->producer->type == "pnnx.Input") {
-                CHECK(input_operand_.empty()) << "graph supports only one input";
+                CHECK(input_operand_.empty()) << "the graph accepts only one input";
                 input_operand_ = opd->name;
             }
            
             if(opd->consumers[0]->type == "pnnx.Output") {
-                CHECK(output_operand_.empty()) << "graph supports only one output";
+                CHECK(output_operand_.empty()) << "the graph accepts only one output";
                 output_operand_ = opd->name;
             }
         }
@@ -102,15 +100,17 @@ namespace lotus {
                 continue;
             CHECK(layers_.find(opt->name) == layers_.end()) << "duplicate layer names";
             if(opt->type == "nn.Conv2d") {
-                layers_.insert({opt->name, MakeLayerConv2d(opt, operands_)});
+                layers_.insert({opt->name, MakeConv2dLayer(opt, operands_)});
             } else if(opt->type == "nn.MaxPool2d") {
-                layers_.insert({opt->name, MakeLayerMaxpool2d(opt, operands_)});
+                layers_.insert({opt->name, MakeMaxpool2dLayer(opt, operands_)});
             } else if(opt->type == "nn.AdaptiveAvgPool2d") {
-                layers_.insert({opt->name, MakeLayerAdaptiveAvgpool2d(opt, operands_)});
+                layers_.insert({opt->name, MakeAdaptiveAvgpool2dLayer(opt, operands_)});
             } else if(opt->type == "torch.flatten") {
-                layers_.insert({opt->name, MakeLayerFlatten(opt, operands_)});
+                layers_.insert({opt->name, MakeFlattenLayer(opt, operands_)});
             } else if(opt->type == "nn.Linear") {
-                layers_.insert({opt->name, MakeLayerLinear(opt, operands_)});
+                layers_.insert({opt->name, MakeLinearLayer(opt, operands_)});
+            } else if(opt->type == "pnnx.Expression") {
+                layers_.insert({opt->name, MakeExpressionLayer(opt, operands_)});
             } else {
                 CHECK(false) << fmt::format("lotusInfer does not support layer {} up to now", opt->type);
             }

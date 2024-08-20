@@ -3,6 +3,7 @@
 #include "layer/flatten.hpp"
 #include "layer/linear.hpp"
 #include "layer/layer_conv2d.hpp"
+#include "layer/expression.hpp"
 
 
 

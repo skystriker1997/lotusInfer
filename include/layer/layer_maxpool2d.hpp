@@ -5,7 +5,7 @@
 
 
 namespace lotus {
-    class LayerMaxpool2d: public Layer {
+    class Maxpool2dLayer: public Layer {
         private:
         uint32_t kernel_h_;
         uint32_t kernel_w_;
@@ -15,7 +15,7 @@ namespace lotus {
         uint32_t padding_w_;
 
         public:
-        LayerMaxpool2d(const std::string& name,
+        Maxpool2dLayer(const std::string& name,
                                  const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                                  const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
                                  const uint32_t kernel_h, const uint32_t kernel_w, 
@@ -23,9 +23,9 @@ namespace lotus {
                                  const uint32_t padding_h, const uint32_t padding_w);
         
         void Forward() override;
-        ~LayerMaxpool2d() override = default;
+        ~Maxpool2dLayer() override = default;
     };
 
 
-    std::shared_ptr<LayerMaxpool2d> MakeLayerMaxpool2d(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands);
+    std::shared_ptr<Maxpool2dLayer> MakeMaxpool2dLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands);
 }

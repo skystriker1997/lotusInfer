@@ -2,7 +2,7 @@
 
 namespace lotus {
 
-    LayerMaxpool2d::LayerMaxpool2d( const std::string& name,
+    Maxpool2dLayer::Maxpool2dLayer( const std::string& name,
                                     const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                                     const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
                                     const uint32_t kernel_h, const uint32_t kernel_w, 
@@ -24,13 +24,13 @@ namespace lotus {
     };
 
 
-    void LayerMaxpool2d::Forward() {
+    void Maxpool2dLayer::Forward() {
         auto x_batch = inputs_[0];
         auto y_batch = outputs_[0];
 
         size_t batch_size = x_batch->tensor_.Dim(0);
         StreamPool pool(batch_size);
-        for(int i=0; i<x_batch->tensor_.Dim(0); ++i) {
+        for(int i=0; i<batch_size; ++i) {
 
             if(i != 0) {
                 pool.SetStream();
@@ -60,7 +60,7 @@ namespace lotus {
     };
 
 
-    std::shared_ptr<LayerMaxpool2d> MakeLayerMaxpool2d(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
+    std::shared_ptr<Maxpool2dLayer> MakeMaxpool2dLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
         CHECK(opt->inputs.size()==1) << "maxpool2d layer gets more than 1 input";  
         CHECK(opt->outputs.size()==1) << "maxpool2d layer gets more than 1 output";
 
@@ -108,7 +108,7 @@ namespace lotus {
         std::vector<std::shared_ptr<Operand>> inputs = {input->second};
         std::vector<std::shared_ptr<Operand>> outputs = {output->second};
 
-        return std::make_shared<LayerMaxpool2d>(opt->name,
+        return std::make_shared<Maxpool2dLayer>(opt->name,
                                                 inputs_name, outputs_name,
                                                 inputs, outputs,
                                                 k_h, k_w,

@@ -3,7 +3,7 @@
 #include "operator/fused_gemv_add_bias.cuh"
 
 namespace lotus {
-    class LayerLinear: public Layer {
+    class LinearLayer: public Layer {
         private:
         Tensor weight_;
         uint32_t in_features_;
@@ -12,7 +12,7 @@ namespace lotus {
         Tensor bias_;
 
         public:
-        LayerLinear(
+        LinearLayer(
                     const std::string& name,
                     const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                     const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
@@ -22,9 +22,9 @@ namespace lotus {
                     
 
         void Forward() override;
-        ~LayerLinear() override = default;
+        ~LinearLayer() override = default;
     };
 
 
-    std::shared_ptr<LayerLinear> MakeLayerLinear(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands);
+    std::shared_ptr<LinearLayer> MakeLinearLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands);
 }
