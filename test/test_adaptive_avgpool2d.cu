@@ -62,12 +62,11 @@ int main()
 
     StreamPool pool(1);
 
-    sadaptive_avgpool2d<<<ADAPTIVE_AVGPOOL2D_GRID(y_c, y_h, y_w), ADAPTIVE_AVGPOOL2D_BLOCK(), 0, pool.Stream()>>>(d_x, d_y, 
-                                                                                                                  k_h, k_w, 
-                                                                                                                  x_c, x_h, x_w,
-                                                                                                                  stride_h, stride_w,
-                                                                                                                  y_h, y_w
-                                                                                                                  );
+    sadaptive_avgpool2d<<<MakeAAP2dGrid(y_c, y_h, y_w), MakeAAP2dBlock(), 0, pool.Stream()>>>(d_x, d_y, 
+                                                                                              k_h, k_w, 
+                                                                                              x_c, x_h, x_w,
+                                                                                              stride_h, stride_w,
+                                                                                              y_h, y_w);
 
     cudaMemcpy(h_y, d_y, y_c*y_h*y_w*sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -76,8 +75,7 @@ int main()
                      x_c,x_h, x_w,
                      k_h, k_w,
                      stride_h, stride_w,
-                     y_h, y_w
-                    );
+                     y_h, y_w);
 
     printf("Cube_Y check: %s\n", chk ? "OK" : "Failed");
 

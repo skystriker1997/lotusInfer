@@ -71,25 +71,23 @@ int main()
 
     StreamPool pool(1);
 
-    smaxpool2d<<<MAXPOOL2D_GRID(y_c, y_h, y_w), MAXPOOL2D_BLOCK(), 0, pool.Stream()>>>( d_x, d_y, 
-                                                                                        k_h, k_w, 
-                                                                                        x_c, padded_x_h, padded_x_w,
-                                                                                        padding_h, padding_w,
-                                                                                        stride_h, stride_w,
-                                                                                        y_h, y_w
-                                                                                        );
+    smaxpool2d<<<MakeMP2dGrid(y_c, y_h, y_w), MakeMP2dBlock(), 0, pool.Stream()>>>(d_x, d_y, 
+                                                                                   k_h, k_w, 
+                                                                                   x_c, padded_x_h, padded_x_w,
+                                                                                   padding_h, padding_w,
+                                                                                   stride_h, stride_w,
+                                                                                   y_h, y_w);
 
     cudaMemcpy(h_y, d_y, y_c*y_h*y_w*sizeof(float), cudaMemcpyDeviceToHost);
 
-    bool chk = check(   x,
-                        h_y,
-                        padded_x_h, padded_x_w,
-                        x_c,
-                        k_h, k_w,
-                        stride_h, stride_w,
-                        y_h, y_w,
-                        padding_h, padding_w
-                    );
+    bool chk = check(x,
+                     h_y,
+                     padded_x_h, padded_x_w,
+                     x_c,
+                     k_h, k_w,
+                     stride_h, stride_w,
+                     y_h, y_w,
+                     padding_h, padding_w);
 
     printf("Cube_Y check: %s\n", chk ? "OK" : "Failed");
 

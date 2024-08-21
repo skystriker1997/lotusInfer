@@ -1,7 +1,6 @@
 #include "operator/fused_gemv_add_bias.cuh"
 
 
-
 void random_init(float *data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         data[i] = float(rand()) / RAND_MAX;
@@ -61,7 +60,7 @@ int main() {
 
     StreamPool pool(1);
 
-    sfgemva<<<FGEMVA_GRID(a_h), FGEMVA_BLOCK(), 0, pool.Stream()>>>(d_x, d_a, d_b, d_y, a_h, a_w, true, ActivationFunction::NONE);
+    sfgemva<<<MakeSFgemvaGrid(a_h), MakeSFgemvaBlock(), 0, pool.Stream()>>>(d_x, d_a, d_b, d_y, a_h, a_w, true, ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, a_h * sizeof(float), cudaMemcpyDeviceToHost);
 

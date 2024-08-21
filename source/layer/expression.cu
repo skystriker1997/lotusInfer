@@ -42,7 +42,7 @@ namespace lotus {
                 pool.SetStream();
             }
 
-            sadd<<<ADD_GRID(y.Size()), ADD_BLOCK(), 0, pool.Stream()>>>(x1.Data(), x2.Data(), y.Data(), y.Size(), af_);
+            sadd<<<MakeAddGrid(y.Size()), MakeAddBlock(), 0, pool.Stream()>>>(x1.Data(), x2.Data(), y.Data(), y.Size(), af_);
             
         }
         cudaDeviceSynchronize();

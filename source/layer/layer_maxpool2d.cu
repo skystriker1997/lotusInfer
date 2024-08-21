@@ -30,13 +30,11 @@ namespace lotus {
 
         size_t batch_size = x_batch->tensor_.Dim(0);
         StreamPool pool(batch_size);
+        
         for(int i=0; i<batch_size; ++i) {
-
             if(i != 0) {
                 pool.SetStream();
             }
-
-
             Tensor x = x_batch->tensor_.Element(i);
             Tensor y = y_batch->tensor_.Element(i);
 
@@ -47,14 +45,13 @@ namespace lotus {
             uint32_t y_h = y.Dim(1);
             uint32_t y_w = y.Dim(2);
 
-            smaxpool2d<<<MAXPOOL2D_GRID(x_c, y_h, y_w), MAXPOOL2D_BLOCK(), 0, pool.Stream()>>>( x.Data(), 
-                                                                                                y.Data(),
-                                                                                                kernel_h_, kernel_w_,
-                                                                                                x_c, padded_x_h, padded_x_w,
-                                                                                                padding_h_, padding_w_, 
-                                                                                                stride_h_, stride_w_,
-                                                                                                y_h, y_w
-                                                                                               );
+            smaxpool2d<<<MakeMP2dGrid(x_c, y_h, y_w), MakeMP2dBlock(), 0, pool.Stream()>>>(x.Data(), 
+                                                                                           y.Data(),
+                                                                                           kernel_h_, kernel_w_,
+                                                                                           x_c, padded_x_h, padded_x_w,
+                                                                                           padding_h_, padding_w_, 
+                                                                                           stride_h_, stride_w_,
+                                                                                           y_h, y_w);
         }
         cudaDeviceSynchronize();
     };
@@ -113,7 +110,6 @@ namespace lotus {
                                                 inputs, outputs,
                                                 k_h, k_w,
                                                 stride_h, stride_w,
-                                                padding_h, padding_w
-                                               );
+                                                padding_h, padding_w);
     };
 }

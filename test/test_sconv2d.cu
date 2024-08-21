@@ -26,7 +26,6 @@ bool check( xt::xarray<float>& x,
             uint32_t padding_w
            ) 
 {
-
     auto sum = [](const float& left, const float& right){return left + right;};
     xt::xarray<float> padded_x = xt::zeros<float>({x_c, padded_x_h, padded_x_w});
     xt::view(padded_x, xt::all(), xt::range(padding_h, padded_x_h-padding_h), xt::range(padding_w, padded_x_w-padding_w)) = x;
@@ -99,41 +98,27 @@ int main()
 
     StreamPool pool(1);
 
-    sconv2d<<<CONV2D_GRID(y_c, y_h, y_w), CONV2D_BLOCK(), 0, pool.Stream()>>>(d_x, 
-                                                                              d_k, 
-                                                                              true, d_b, 
-                                                                              d_y, 
-                                                                              k_num, k_c, k_h, k_w, 
-                                                                              x_c, padded_x_h, padded_x_w,
-                                                                              y_c, y_h, y_w,
-                                                                              stride_h, stride_w,
-                                                                              padding_h, padding_w,
-                                                                              ActivationFunction::NONE
-                                                                              );
+    sconv2d<<<MakeConv2dGrid(y_c, y_h, y_w), MakeConv2dBlock(), 0, pool.Stream()>>>(d_x, 
+                                                                                    d_k, 
+                                                                                    true, d_b, 
+                                                                                    d_y, 
+                                                                                    k_num, k_c, k_h, k_w, 
+                                                                                    x_c, padded_x_h, padded_x_w,
+                                                                                    y_c, y_h, y_w,
+                                                                                    stride_h, stride_w,
+                                                                                    padding_h, padding_w,
+                                                                                    ActivationFunction::NONE);
 
    
-
     cudaMemcpy(h_y, d_y, y_c*y_h*y_w * sizeof(float), cudaMemcpyDeviceToHost);
 
-    bool chk = check(   x,
-                        k,
-                        b,
-                        h_y,
-                        padded_x_h,
-                        padded_x_w,
-                        x_c,
-                        k_num,
-                        k_c,
-                        k_h,
-                        k_w,
-                        stride_h,
-                        stride_w,
-                        y_c,
-                        y_h,
-                        y_w,
-                        padding_h,
-                        padding_w
-                    );
+    bool chk = check(x, k, b, h_y,
+                     padded_x_h, padded_x_w,
+                     x_c,
+                     k_num, k_c, k_h, k_w,
+                     stride_h, stride_w,
+                     y_c, y_h, y_w,
+                     padding_h, padding_w);
 
     printf("Cube_Y check: %s\n", chk ? "OK" : "Failed");
 

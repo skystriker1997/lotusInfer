@@ -2,12 +2,11 @@
 #include "lotus_utils.hpp"
 
 
-#define CONV2D_GRID(output_c, output_h, output_w) {(output_h*output_w+127)/128, (output_c+127)/128}                                                                                                                            
-
-#define CONV2D_BLOCK() {256}
-
 namespace lotus {
 
+    dim3 MakeConv2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w);
+
+    dim3 MakeConv2dBlock();
 
     __global__ void sconv2d(const float* x, 
                             const float* k, 

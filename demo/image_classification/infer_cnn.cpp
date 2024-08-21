@@ -17,7 +17,6 @@ void PreprocessImage(cv::Mat &image, std::vector<float> &result) {
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     image.convertTo(image, CV_32FC3, 1.f / 255.f);
     
-
     int center_x = image.cols / 2;
     int center_y = image.rows / 2;
 
@@ -102,10 +101,9 @@ int main(int argc, char* argv[]) {
 
     for(int i=0; i<5; ++i) {
         auto index = xt::argmax(probabilities)();
-        std::cout << fmt::format("with {} percent likelyhood to be {}\n", probabilities(index)*100, classes[index]);
+        std::cout << "with " << probabilities(index)*100 << " percent likelyhood to be " << classes[index] << std::endl;
         probabilities(index) = 0;
     }
     
-
     return 0;
 }

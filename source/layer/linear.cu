@@ -43,7 +43,7 @@ namespace lotus {
                 pool.SetStream();
             }
 
-            sfgemva<<<FGEMVA_GRID(out_features_), FGEMVA_BLOCK(), 0, pool.Stream()>>>(x.Data(), weight_.Data(), bias_.Data(), y.Data(), out_features_, in_features_, use_bias_, af_);
+            sfgemva<<<MakeSFgemvaGrid(out_features_), MakeSFgemvaBlock(), 0, pool.Stream()>>>(x.Data(), weight_.Data(), bias_.Data(), y.Data(), out_features_, in_features_, use_bias_, af_);
             
         }
         cudaDeviceSynchronize();
@@ -94,7 +94,6 @@ namespace lotus {
                                              inputs_name, outputs_name,
                                              inputs, outputs,
                                              weight->second.data, in_features->second.i, out_features->second.i,
-                                             use_bias->second.b, use_bias->second.b?bias->second.data:empty_bias
-                                             );
+                                             use_bias->second.b, use_bias->second.b?bias->second.data:empty_bias);
     };
 }

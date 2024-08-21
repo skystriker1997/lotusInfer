@@ -2,6 +2,15 @@
 
 namespace lotus {
 
+    dim3 MakeConv2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w) {
+        return {(y_h*y_w+127)/128, (y_c+127)/128};
+    };
+
+    dim3 MakeConv2dBlock() {
+        return {256};
+    };
+
+
     /*
     *
     * matrix a, b, and c are row-major

@@ -112,7 +112,7 @@ namespace lotus {
             } else if(opt->type == "pnnx.Expression") {
                 layers_.insert({opt->name, MakeExpressionLayer(opt, operands_)});
             } else {
-                CHECK(false) << fmt::format("lotusInfer does not support layer {} up to now", opt->type);
+                CHECK(false) << "lotusInfer does not support layer " << opt->type << " up to now";
             }
         }
 
@@ -137,7 +137,6 @@ namespace lotus {
 
 
     void Graph::Forward() {
-
         for(const auto &layer: topo_sorted_layers_) {
             std::cout << "layer " << layer->Name() << " started" << std::endl;
             layer->Forward();

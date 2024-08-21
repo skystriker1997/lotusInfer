@@ -50,7 +50,7 @@ int main()
 
     StreamPool pool(1);
 
-    sadd<<<ADD_GRID(size), ADD_BLOCK(), 0, pool.Stream()>>>(d_x1, d_x2, d_y, size, ActivationFunction::NONE);
+    sadd<<<MakeAddGrid(size), MakeAddBlock(), 0, pool.Stream()>>>(d_x1, d_x2, d_y, size, ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, size*sizeof(float), cudaMemcpyDeviceToHost);
 

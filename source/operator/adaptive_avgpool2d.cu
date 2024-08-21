@@ -2,6 +2,16 @@
 
 
 namespace lotus {
+
+    dim3 MakeAAP2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w) {
+        return {(y_w+7)/8, (y_h+7)/8, (y_c+7)/8};
+    };
+
+    dim3 MakeAAP2dBlock() {
+        return {8,8,8};
+    };
+
+
     __global__ void sadaptive_avgpool2d(const float* x, float* y, 
                                         const uint32_t kernel_h, const uint32_t kernel_w, 
                                         const uint32_t x_c, const uint32_t x_h, const uint32_t x_w,  

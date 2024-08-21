@@ -2,11 +2,10 @@
 
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
-#include <fmt/core.h>
+#include <cublas_v2.h>
 #include <memory>
 #include <glog/logging.h>
 #include <type_traits>
-#include <cublas_v2.h>
 #include <vector>
 #include <algorithm>
 #include <cstdint>
@@ -26,14 +25,14 @@
 #define CUDA_CHECK(err)                                                                                                                         \
     do {                                                                                                                                        \
         cudaError_t _err = (err);                                                                                                               \
-        CHECK(_err == cudaSuccess) << fmt::format("CUDA error {} at {}:{}\n", cudaGetErrorString(_err), __FILE__, __LINE__);                    \
+        CHECK(_err == cudaSuccess) << "CUDA error " << cudaGetErrorString(_err);                                                                \
     } while (0)
 
 
 #define CUBLAS_CHECK(err)                                                                                                                       \
     do {                                                                                                                                        \
         cublasStatus_t _err = (err);                                                                                                            \
-        CHECK(_err == CUBLAS_STATUS_SUCCESS) << fmt::format("CUBLAS error {} at {}:{}\n", cublasGetStatusString(_err), __FILE__, __LINE__);     \
+        CHECK(_err == CUBLAS_STATUS_SUCCESS) << "CUBLAS error ", cublasGetStatusString(_err);                                                   \
     } while (0)
 
 

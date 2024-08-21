@@ -2,11 +2,11 @@
 #include "lotus_utils.hpp"
 
 
-#define MAXPOOL2D_GRID(y_c, y_h, y_w) {(y_w+7)/8, (y_h+7)/8, (y_c+7)/8}
-#define MAXPOOL2D_BLOCK() {8, 8, 8}
-
-
 namespace lotus {
+
+    dim3 MakeMP2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w);
+
+    dim3 MakeMP2dBlock();
 
     __global__ void smaxpool2d(const float* x, float* y, 
                                const uint32_t kernel_h, const uint32_t kernel_w, 

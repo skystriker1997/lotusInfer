@@ -3,6 +3,14 @@
 
 namespace lotus {
 
+    dim3 MakeSFgemvaGrid(uint32_t a_h) {
+        return {(a_h+7)/8};
+    };
+
+    dim3 MakeSFgemvaBlock() {
+        return {128, 8};
+    };
+
 
      __device__ __forceinline__ void reduce_add(float* x_tile, float* a_tile, float& result) 
     {  

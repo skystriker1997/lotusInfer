@@ -42,11 +42,11 @@ namespace lotus {
             float stride_h = (x_h-kernel_h)/output_h_;
             float stride_w = (x_w-kernel_w)/output_w_;
 
-            sadaptive_avgpool2d<<<ADAPTIVE_AVGPOOL2D_GRID(x_c, output_h_, output_w_), ADAPTIVE_AVGPOOL2D_BLOCK(), 0, pool.Stream()>>>(x.Data(), y.Data(), 
-                                                                                                                                      kernel_h, kernel_w, 
-                                                                                                                                      x_c, x_h, x_w, 
-                                                                                                                                      stride_h, stride_w, 
-                                                                                                                                      output_h_, output_w_);
+            sadaptive_avgpool2d<<<MakeAAP2dGrid(x_c, output_h_, output_w_), MakeAAP2dBlock(), 0, pool.Stream()>>>(x.Data(), y.Data(), 
+                                                                                                                  kernel_h, kernel_w, 
+                                                                                                                  x_c, x_h, x_w, 
+                                                                                                                  stride_h, stride_w, 
+                                                                                                                  output_h_, output_w_);
 
         }
         cudaDeviceSynchronize();
@@ -83,7 +83,6 @@ namespace lotus {
         return std::make_shared<AdaptiveAvgpool2dLayer>(opt->name,
                                                         inputs_name, outputs_name,
                                                         inputs, outputs,
-                                                        output_h, output_w
-                                                        );
+                                                        output_h, output_w);
     };
 }

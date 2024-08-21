@@ -54,17 +54,16 @@ namespace lotus {
 
             uint32_t x_c = x.Dim(0);
 
-            sconv2d<<<CONV2D_GRID(y_c, y_h, y_w), CONV2D_BLOCK(), 0, pool.Stream()>>>(x.Data(), 
-                                                                                      kernel_.Data(), 
-                                                                                      use_bias_, bias_.Data(), 
-                                                                                      y.Data(), 
-                                                                                      kernel_.Dim(0), kernel_.Dim(1), kernel_.Dim(2), kernel_.Dim(3), 
-                                                                                      x_c, padded_x_h, padded_x_w,  
-                                                                                      y_c, y_h, y_w,
-                                                                                      stride_h_, stride_w_,
-                                                                                      padding_h_, padding_w_, 
-                                                                                      af_
-                                                                                     );
+            sconv2d<<<MakeConv2dGrid(y_c, y_h, y_w), MakeConv2dBlock(), 0, pool.Stream()>>>(x.Data(), 
+                                                                                            kernel_.Data(), 
+                                                                                            use_bias_, bias_.Data(), 
+                                                                                            y.Data(), 
+                                                                                            kernel_.Dim(0), kernel_.Dim(1), kernel_.Dim(2), kernel_.Dim(3), 
+                                                                                            x_c, padded_x_h, padded_x_w,  
+                                                                                            y_c, y_h, y_w,
+                                                                                            stride_h_, stride_w_,
+                                                                                            padding_h_, padding_w_, 
+                                                                                            af_);
 
         }
         cudaDeviceSynchronize();
@@ -147,7 +146,6 @@ namespace lotus {
                                              k_num, k_c, k_h, k_w,
                                              use_bias->second.b, use_bias->second.b?bias->second.data:empty_bias,
                                              stride_h, stride_w,
-                                             padding_h, padding_w
-                                             );
+                                             padding_h, padding_w);
     };
 }
