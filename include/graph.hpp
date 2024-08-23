@@ -1,10 +1,11 @@
+#pragma once
+
 #include "layer/layer_adaptive_avgpool2d.hpp"
 #include "layer/layer_maxpool2d.hpp"
 #include "layer/flatten.hpp"
 #include "layer/linear.hpp"
 #include "layer/layer_conv2d.hpp"
 #include "layer/expression.hpp"
-
 
 
 namespace lotus {
