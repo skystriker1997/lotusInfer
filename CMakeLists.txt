@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.17)
 
 project(lotusinfer LANGUAGES CXX CUDA)
 
-add_definitions(-DHAVE_CBLAS=1)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_ARCHITECTURES 86)
 
