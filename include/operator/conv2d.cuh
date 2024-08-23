@@ -17,8 +17,7 @@ namespace lotus {
                             const uint32_t y_c, const uint32_t y_h, const uint32_t y_w,
                             const uint32_t stride_h, const uint32_t stride_w,
                             const uint32_t padding_h, const uint32_t padding_w,
-                            ActivationFunction af
-                            );
+                            ActivationFunction af);
 
 
 }
