@@ -119,51 +119,14 @@ namespace lotus {
         uint32_t unpadded_x_w = padded_x_w - 2*padding_w;
         uint32_t unpadded_x_h = padded_x_h - 2*padding_h;
 
-        #pragma unroll
-        for(uint32_t i=0; i<4; ++i) {
-           
-            bool k_guard = thread_offset_k_w+i<kernel_size && thread_offset_k_h<k_num;
-            if(k_guard) {
-                ldgsts32(&k_smem[0][thread_offset_sts_k_h][thread_offset_sts_k_w+i], k+thread_offset_k_h*kernel_size+thread_offset_k_w+i, 1);
-            } else {
-                k_smem[0][thread_offset_sts_k_h][thread_offset_sts_k_w+i] = 0.f;
-            }
-        }
-
-
-        #pragma unroll
-        for(uint32_t i=0; i<4; ++i) {
-
-            uint32_t channel_idx = thread_offset_x_h / channel_size;
-            uint32_t row_idx_in_window = (thread_offset_x_h-channel_idx*channel_size) / k_w;
-            uint32_t col_idx_in_window = thread_offset_x_h-channel_idx*channel_size-row_idx_in_window*k_w;
-            uint32_t row_idx = (thread_offset_x_w+i)/y_w*stride_h+row_idx_in_window;
-            uint32_t col_idx = (thread_offset_x_w+i)%y_w*stride_w + col_idx_in_window;
-
-            bool x_guard = thread_offset_x_w+i<y_h*y_w && thread_offset_x_h<kernel_size && (row_idx>=padding_h && row_idx<padded_x_h-padding_h) && (col_idx>=padding_w && col_idx<padded_x_w-padding_w);
-
-            if(x_guard) {
-                ldgsts32(&x_smem[0][thread_offset_sts_x_h][thread_offset_sts_x_w+i], x+(row_idx-padding_h)*unpadded_x_w+(col_idx-padding_w)+channel_idx*unpadded_x_h*unpadded_x_w, 1);
-            } else {
-                x_smem[0][thread_offset_sts_x_h][thread_offset_sts_x_w+i] = 0.f;
-            } 
-        }
-
-        wait();
-
-        __syncthreads();
-
         uint32_t smem_load_idx = 0;
-        uint32_t smem_store_idx = 1;
-       
+        uint32_t smem_store_idx = 0;
+        uint32_t frag_load_idx = 0;
+        uint32_t frag_store_idx = 0;
 
-        for(uint32_t k_step=0; k_step<(kernel_size+7)/8-1; ++k_step) {
-            thread_offset_k_w += 8;
-            thread_offset_x_h += 8;
-
+        auto LoadFromGlobal = [&]() {
             #pragma unroll
             for(uint32_t i=0; i<4; ++i) {
-            
                 bool k_guard = thread_offset_k_w+i<kernel_size && thread_offset_k_h<k_num;
                 if(k_guard) {
                     ldgsts32(&k_smem[smem_store_idx][thread_offset_sts_k_h][thread_offset_sts_k_w+i], k+thread_offset_k_h*kernel_size+thread_offset_k_w+i, 1);
@@ -171,10 +134,8 @@ namespace lotus {
                     k_smem[smem_store_idx][thread_offset_sts_k_h][thread_offset_sts_k_w+i] = 0.f;
                 }
             }
-
             #pragma unroll
             for(uint32_t i=0; i<4; ++i) {
-
                 uint32_t channel_idx = thread_offset_x_h / channel_size;
                 uint32_t row_idx_in_window = (thread_offset_x_h-channel_idx*channel_size) / k_w;
                 uint32_t col_idx_in_window = thread_offset_x_h-channel_idx*channel_size-row_idx_in_window*k_w;
@@ -189,78 +150,72 @@ namespace lotus {
                     x_smem[smem_store_idx][thread_offset_sts_x_h][thread_offset_sts_x_w+i] = 0.f;
                 } 
             }
+        };
 
-
+        auto LoadFromSmem = [&](uint32_t i_) {
             #pragma unroll
-            for(uint32_t i=0; i<8; ++i) {
-                k_frag[0][i] = k_smem[smem_load_idx][thread_offset_blocktile_h+i][0];
-                x_frag[0][i] = x_smem[smem_load_idx][0][thread_offset_blocktile_w+i];
+            for(uint32_t j=0; j<8; ++j) {
+                k_frag[frag_store_idx][j] = k_smem[smem_load_idx][thread_offset_blocktile_h+j][i_];
+                x_frag[frag_store_idx][j] = x_smem[smem_load_idx][i_][thread_offset_blocktile_w+j];
             }
+        };
 
-            uint32_t frag_load_idx = 0;
-            uint32_t frag_store_idx = 1;
+        auto ComputeThreadTile = [&]() {
+            #pragma unroll
+            for(uint32_t h=0; h<8; ++h) {
+                for(uint32_t w=0; w<8; ++w) {
+                    y_frag[h][w] += k_frag[frag_load_idx][h]*x_frag[frag_load_idx][w];
+                }
+            }
+        };
+
+        LoadFromGlobal();
+        smem_store_idx ^= 1;
+
+        wait();
+        __syncthreads();
+
+        for(uint32_t k_step=0; k_step<(kernel_size+7)/8-1; ++k_step) {
+            thread_offset_k_w += 8;
+            thread_offset_x_h += 8;
+
+            LoadFromGlobal();
+            smem_store_idx ^= 1;
+
+            LoadFromSmem(0);
+            frag_store_idx ^= 1;
 
             #pragma unroll
             for(uint32_t i=0; i<7; ++i) {
-                #pragma unroll
-                for(uint32_t j=0; j<8; ++j) {
-                    k_frag[frag_store_idx][j] = k_smem[smem_load_idx][thread_offset_blocktile_h+j][i+1];
-                    x_frag[frag_store_idx][j] = x_smem[smem_load_idx][i+1][thread_offset_blocktile_w+j];
-                }
-                #pragma unroll
-                for(uint32_t h=0; h<8; ++h) {
-                    for(uint32_t w=0; w<8; ++w) {
-                        y_frag[h][w] += k_frag[frag_load_idx][h]*x_frag[frag_load_idx][w];
-                    }
-                }
-                frag_load_idx ^= 1;
+                LoadFromSmem(i+1);
                 frag_store_idx ^= 1;
+                
+                ComputeThreadTile();
+                frag_load_idx ^= 1;
             }
-            #pragma unroll
-            for(uint32_t h=0; h<8; ++h) {
-                for(uint32_t w=0; w<8; ++w) {
-                    y_frag[h][w] += k_frag[frag_load_idx][h]*x_frag[frag_load_idx][w];
-                }
-            }
+
+            ComputeThreadTile();
+            frag_load_idx ^= 1;
 
             wait();
             __syncthreads();
-
             smem_load_idx ^= 1;
-            smem_store_idx ^= 1;
         }
 
-        #pragma unroll
-        for(uint32_t i=0; i<8; ++i) {
-            k_frag[0][i] = k_smem[smem_load_idx][thread_offset_blocktile_h+i][0];
-            x_frag[0][i] = x_smem[smem_load_idx][0][thread_offset_blocktile_w+i];
-        }
-
-        uint32_t frag_load_idx = 0;
-        uint32_t frag_store_idx = 1;
+        LoadFromSmem(0);
+        frag_store_idx ^= 1;
 
         #pragma unroll
         for(uint32_t i=0; i<7; ++i) {
-            #pragma unroll
-            for(uint32_t j=0; j<8; ++j) {
-                k_frag[frag_store_idx][j] = k_smem[smem_load_idx][thread_offset_blocktile_h+j][i+1];
-                x_frag[frag_store_idx][j] = x_smem[smem_load_idx][i+1][thread_offset_blocktile_w+j];
-            }
-            #pragma unroll
-            for(uint32_t h=0; h<8; ++h) {
-                for(uint32_t w=0; w<8; ++w) {
-                    y_frag[h][w] += k_frag[frag_load_idx][h]*x_frag[frag_load_idx][w];
-                }
-            }
-            frag_load_idx ^= 1;
+            LoadFromSmem(i+1);
             frag_store_idx ^= 1;
+            
+            ComputeThreadTile();
+            frag_load_idx ^= 1;
         }
-        #pragma unroll
-        for(uint32_t h=0; h<8; ++h) {
-            for(uint32_t w=0; w<8; ++w) {
-                y_frag[h][w] += k_frag[frag_load_idx][h]*x_frag[frag_load_idx][w];
-            }
-        }
+
+        ComputeThreadTile();
+        frag_load_idx ^= 1;
 
         #pragma unroll
         for(uint32_t h=0; h<8; ++h) {
@@ -274,10 +229,10 @@ namespace lotus {
                     } else {
                         y[i*(y_h*y_w)+j] = tmp;
                     }
-                    
                 }
             }
         }
+
     }
 
 

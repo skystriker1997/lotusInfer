@@ -37,6 +37,7 @@ namespace lotus {
 
 
 
+
     __global__ void sfgemva(const float *x, const float *a, const float* b, float *y, uint32_t a_h, uint32_t a_w, bool use_bias, ActivationFunction af) 
     {
         float result = 0;
@@ -47,41 +48,40 @@ namespace lotus {
         uint32_t offset_a_w = threadIdx.x * 4;
         uint32_t offset_a_h = blockIdx.x*8 + threadIdx.y;
 
-        for(uint32_t i=0; i<4; ++i) {
-            bool guard = a_w>(offset_a_w+i) && a_h>offset_a_h;
-
-            if(guard) {
-                ldgsts32(&a_tile[0][threadIdx.y][threadIdx.x*4+i], &a[offset_a_h*a_w+offset_a_w+i], 1);
-                ldgsts32(&x_tile[0][threadIdx.x*4+i], x+offset_a_w+i, 1);
-            } else {
-                a_tile[0][threadIdx.y][threadIdx.x*4+i] = 0;
-                x_tile[0][threadIdx.x*4+i] = 0;
-            }
-        }
-        
-        wait();
-        __syncthreads();
-
         uint32_t load_idx = 0;
-        uint32_t store_idx = 1;
-        for(uint32_t k=0; k<(a_w+511)/512-1; ++k) {
-            offset_a_w += 512;
+        uint32_t store_idx = 0;
+
+        auto LoadFromGlobal = [&]() {
             for(uint32_t i=0; i<4; ++i) {
                 bool guard = a_w>(offset_a_w+i) && a_h>offset_a_h;
                 if(guard) {
-                    ldgsts32(&a_tile[store_idx][threadIdx.y][threadIdx.x*4+i], &a[offset_a_h*a_w+offset_a_w+i], 1);
-                    ldgsts32(&x_tile[store_idx][threadIdx.x*4+i], x+offset_a_w+i, 1);
+                    ldgsts32(&a_tile[0][threadIdx.y][threadIdx.x*4+i], &a[offset_a_h*a_w+offset_a_w+i], 1);
+                    ldgsts32(&x_tile[0][threadIdx.x*4+i], x+offset_a_w+i, 1);
                 } else {
                     a_tile[store_idx][threadIdx.y][threadIdx.x*4+i] = 0;
                     x_tile[store_idx][threadIdx.x*4+i] = 0;
                 }
             }
+        };
+       
+        LoadFromGlobal();
+        store_idx ^= 1;
+
+        wait();
+        __syncthreads();
+
+
+        for(uint32_t k=0; k<(a_w+511)/512-1; ++k) {
+            offset_a_w += 512;
+
+            LoadFromGlobal();
+            store_idx ^= 1;
+
             reduce_add(&x_tile[load_idx][0], &a_tile[load_idx][threadIdx.y][0], result);
+            load_idx ^= 1;
 
             wait();
             __syncthreads();
-            load_idx ^= 1;
-            store_idx ^= 1;
         }
 
         reduce_add(&x_tile[load_idx][0], &a_tile[load_idx][threadIdx.y][0], result);
