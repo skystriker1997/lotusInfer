@@ -197,9 +197,10 @@ namespace lotus {
             ComputeThreadTile();
             frag_load_idx ^= 1;
 
+            smem_load_idx ^= 1;
+
             wait();
             __syncthreads();
-            smem_load_idx ^= 1;
         }
 
         LoadFromSmem(0);
@@ -215,7 +216,6 @@ namespace lotus {
         }
 
         ComputeThreadTile();
-        frag_load_idx ^= 1;
 
         #pragma unroll
         for(uint32_t h=0; h<8; ++h) {
