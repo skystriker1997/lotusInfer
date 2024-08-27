@@ -3,8 +3,8 @@
 
 namespace lotus {
 
-    dim3 MakeMP2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w) {
-        return {(y_w+7)/8, (y_h+7)/8, (y_c+7)/8};
+    dim3 MakeMP2dGrid(uint32_t output_c, uint32_t output_h, uint32_t output_w) {
+        return {(output_w+7)/8, (output_h+7)/8, (output_c+7)/8};
     };
 
     dim3 MakeMP2dBlock() {
@@ -12,49 +12,47 @@ namespace lotus {
     };
 
 
-    __global__ void smaxpool2d(const float* x, float* y, 
+    __global__ void smaxpool2d(const float* input, float* output, 
                                const uint32_t kernel_h, const uint32_t kernel_w, 
-                               const uint32_t x_c, const uint32_t padded_x_h, const uint32_t padded_x_w,  
+                               const uint32_t input_c, const uint32_t padded_input_h, const uint32_t padded_input_w,  
                                const uint32_t padding_h, const uint32_t padding_w, 
                                const uint32_t stride_h, const uint32_t stride_w, 
-                               const uint32_t y_h, const uint32_t y_w)
+                               const uint32_t output_h, const uint32_t output_w)
     {
 
-        uint32_t thread_offset_y_h = blockIdx.y*8 + threadIdx.y;
-        uint32_t thread_offset_y_w = blockIdx.x*8 + threadIdx.x;
-        uint32_t thread_offset_y_c = blockIdx.z*8 + threadIdx.z;
+        uint32_t thread_offset_output_y = blockIdx.y*8 + threadIdx.y;
+        uint32_t thread_offset_output_x = blockIdx.x*8 + threadIdx.x;
+        uint32_t thread_offset_output_z = blockIdx.z*8 + threadIdx.z;
 
-        if(thread_offset_y_h<y_h && thread_offset_y_w<y_w && thread_offset_y_c<x_c) {
+        if(thread_offset_output_y<output_h && thread_offset_output_x<output_w && thread_offset_output_z<input_c) {
 
-            uint32_t thread_offset_x_h = thread_offset_y_h*stride_h;
-            uint32_t thread_offset_x_w = thread_offset_y_w*stride_w;
-            uint32_t thread_offset_x_c = thread_offset_y_c;
+            uint32_t thread_offset_input_y = thread_offset_output_y*stride_h;
+            uint32_t thread_offset_input_x = thread_offset_output_x*stride_w;
+            uint32_t thread_offset_input_z = thread_offset_output_z;
 
-            uint32_t unpadded_x_h = padded_x_h-2*padding_h;
-            uint32_t unpadded_x_w = padded_x_w-2*padding_w;
+            uint32_t unpadded_input_h = padded_input_h-2*padding_h;
+            uint32_t unpadded_input_w = padded_input_w-2*padding_w;
 
             float max;
         
-            for(uint32_t i=0; i<kernel_h; ++i) {
-                for(uint32_t j=0; j<kernel_w; ++j) {
-                    bool guard = thread_offset_x_h+i>=padding_h && thread_offset_x_h+i<padded_x_h-padding_h && thread_offset_x_w+j>=padding_w && thread_offset_x_w+j<padded_x_w-padding_w;
-                    float target;
+            for(uint32_t y=0; y<kernel_h; ++y) {
+                for(uint32_t x=0; x<kernel_w; ++x) {
+                    bool guard = thread_offset_input_y+y>=padding_h && thread_offset_input_y+y<padded_input_h-padding_h && thread_offset_input_x+x>=padding_w && thread_offset_input_x+x<padded_input_w-padding_w;
+                    float value;
                     if(guard) {
-                        uint32_t true_offset_w = thread_offset_x_w+j-padding_w;
-                        uint32_t true_offset_h = thread_offset_x_h+i-padding_h;
-                        target = x[thread_offset_x_c*unpadded_x_h*unpadded_x_w + true_offset_h*unpadded_x_w + true_offset_w];
-                    } else {
-                        target = 0;
-                    }
-                    if(i==0 && j==0) {
-                        max = target;
-                    } else {
-                        max = target>max?target:max;
-                    }
+                        uint32_t true_offset_x = thread_offset_input_x+x-padding_w;
+                        uint32_t true_offset_y = thread_offset_input_y+y-padding_h;
+                        value = input[thread_offset_input_z*unpadded_input_h*unpadded_input_w + true_offset_y*unpadded_input_w + true_offset_x];
+                        if(y==0 && x==0) {
+                            max = value;
+                        } else {
+                            max = value>max?value:max;
+                        }  
+                    } 
                 }
             }
 
-            y[thread_offset_y_c*y_h*y_w+thread_offset_y_h*y_w+thread_offset_y_w] = max;
+            output[thread_offset_output_z*output_h*output_w+thread_offset_output_y*output_w+thread_offset_output_x] = max;
         };
     };
 

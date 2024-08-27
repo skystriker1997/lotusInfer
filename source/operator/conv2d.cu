@@ -2,122 +2,69 @@
 
 namespace lotus {
 
-    dim3 MakeConv2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w) {
-        return {(y_h*y_w+127)/128, (y_c+127)/128};
+
+    dim3 MakeConv2dGrid(uint32_t output_c, uint32_t output_h, uint32_t output_w) {
+        return {(output_h*output_w+127)/128, (output_c+127)/128};
     };
+
 
     dim3 MakeConv2dBlock() {
         return {256};
     };
 
 
-    /*
-    *
-    * matrix a, b, and c are row-major
-    * 
-    * -----------------------------------------------------------------------------------------------------------------------------------------------
-    * 
-    * tile map:
-    * 
-    *                                          b_tile                            
-    *                                                                               128 floats                    
-    *                                         -|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-
-    *                                 8 floats |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
-    *                                         -|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-
-    * 
-    *                           8 floats                     
-    *                          -|-----|-     --|-----|-----|-----|-----|-----|-----|-----|-----|-----------------------------------------------|-
-    *                           |     |        | t0  |  t1 |  t2 |  t3 | t4  | t5  | t6  | t7  |                                               |
-    *                           |-----|       -|-----|-----|-----|-----|-----|-----|-----|-----|                                               |
-    *               a_tile      |     |        | t8  |  t9 | t10 | t11 | t12 | t13 | t14 | t15 |                                               |
-    *                           |-----|       -|-----|-----|----- warp0 -----|-----|-----|-----|                 warp1                         |
-    *                           |     |        | t16 | t17 | t18 | t19 | t20 | t21 | t22 | t23 |                                               |
-    *                           |-----|       -|-----|-----|-----|-----|-----|-----|-----|-----|                                               |
-    *                           |     |        | t24 | t25 | t26 | t27 | t28 | t29 | t30 | t31 |                                               |
-    *                           |-----|       -|-----|-----|-----|-----|-----|-----|-----|-----|-----------------------------------------------|-
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                                               |                                               |
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                 warp2                         |                 warp3                         |
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                                               |                                               |     
-    *                           |     |        |                                               |                                               |
-    *              128 floats   |-----|       -|-------------------------------------------- block --------------------------------------------|-
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                                               |                                               |
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                 warp4                         |                 warp5                         |
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                                               |                                               |
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|-----------------------------------------------|-----------------------------------------------|-
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                                               |                                               |
-    *                           |     |        |                                               |                                               |
-    *                           |-----|       -|                                               |                                               |
-    *                           |     |        |                 warp6                         |                 warp7                         |
-    *                           |-----|       -|                                               |                                               |
-    *                           |     |        |                                               |                                               |
-    *                          -|-----|-      -|-----------------------------------------------|-----------------------------------------------|-
-    * 
-    * --------------------------------------------------------------------------------------------------------------------------------------------------
-    */
-
-
-
-    __global__ void sconv2d(const float* x, 
+    __global__ void sconv2d(const float* input, 
                             const float* k, 
                             bool use_bias, const float* b, 
-                            float* y, 
+                            float* output, 
                             const uint32_t k_num, const uint32_t k_c, const uint32_t k_h, const uint32_t k_w, 
-                            const uint32_t x_c, const uint32_t padded_x_h, const uint32_t padded_x_w,    
-                            const uint32_t y_c, const uint32_t y_h, const uint32_t y_w,
+                            const uint32_t input_c, const uint32_t padded_input_h, const uint32_t padded_input_w,    
+                            const uint32_t output_c, const uint32_t output_h, const uint32_t output_w,
                             const uint32_t stride_h, const uint32_t stride_w,
                             const uint32_t padding_h, const uint32_t padding_w,
                             ActivationFunction af
                             )
     {
         __shared__ float k_smem[2][128][8];
-        __shared__ float x_smem[2][8][128];
+        __shared__ float input_smem[2][8][128];
 
         float k_frag[2][8];
-        float x_frag[2][8];
+        float input_frag[2][8];
 
-        float y_frag[8][8] = {0};
-
+        float output_frag[8][8] = {0};
 
         uint32_t warp_idx = threadIdx.x / 32;
 
-        uint32_t thread_idx_in_warp_w = (threadIdx.x%32) % 8;
-        uint32_t thread_idx_in_warp_h = (threadIdx.x%32) / 8;
+        uint32_t thread_idx_in_warp_x = (threadIdx.x%32) % 8;
+        uint32_t thread_idx_in_warp_y = (threadIdx.x%32) / 8;
 
-        uint32_t block_offset_y_w = blockIdx.x*128;
-        uint32_t block_offset_y_h = blockIdx.y*128;
+        uint32_t block_offset_output_x = blockIdx.x*128;
+        uint32_t block_offset_output_y = blockIdx.y*128;
 
-        uint32_t thread_offset_blocktile_w = (warp_idx%2)*64 + thread_idx_in_warp_w*8;
-        uint32_t thread_offset_blocktile_h = (warp_idx/2)*32 + thread_idx_in_warp_h*8;
+        uint32_t thread_offset_blocktile_x = (warp_idx%2)*64 + thread_idx_in_warp_x*8;
+        uint32_t thread_offset_blocktile_y = (warp_idx/2)*32 + thread_idx_in_warp_y*8;
 
-        uint32_t thread_offset_y_w = block_offset_y_w + thread_offset_blocktile_w;
-        uint32_t thread_offset_y_h = block_offset_y_h + thread_offset_blocktile_h;
+        uint32_t thread_offset_output_x = block_offset_output_x + thread_offset_blocktile_x;
+        uint32_t thread_offset_output_y = block_offset_output_y + thread_offset_blocktile_y;
 
-        uint32_t thread_offset_sts_k_w = (threadIdx.x%2)*4;
-        uint32_t thread_offset_sts_k_h = threadIdx.x/2;
+        uint32_t thread_offset_sts_k_x = (threadIdx.x%2)*4;
+        uint32_t thread_offset_sts_k_y = threadIdx.x/2;
 
-        uint32_t thread_offset_k_h = block_offset_y_h+thread_offset_sts_k_h;
-        uint32_t thread_offset_k_w = thread_offset_sts_k_w;
+        uint32_t thread_offset_k_y = block_offset_output_y+thread_offset_sts_k_y;
+        uint32_t thread_offset_k_x = thread_offset_sts_k_x;
 
-        uint32_t thread_offset_sts_x_w = (threadIdx.x%32)*4;
-        uint32_t thread_offset_sts_x_h = threadIdx.x/32;
+        uint32_t thread_offset_sts_input_x = (threadIdx.x%32)*4;
+        uint32_t thread_offset_sts_input_y = threadIdx.x/32;
 
-        uint32_t thread_offset_x_w = block_offset_y_w+thread_offset_sts_x_w;
-        uint32_t thread_offset_x_h = thread_offset_sts_x_h;
+        uint32_t thread_offset_input_x = block_offset_output_x+thread_offset_sts_input_x;
+        uint32_t thread_offset_input_y = thread_offset_sts_input_y;
 
 
         uint32_t channel_size = k_h * k_w;
         uint32_t kernel_size = k_c * channel_size;
 
-        uint32_t unpadded_x_w = padded_x_w - 2*padding_w;
-        uint32_t unpadded_x_h = padded_x_h - 2*padding_h;
+        uint32_t unpadded_input_w = padded_input_w - 2*padding_w;
+        uint32_t unpadded_input_h = padded_input_h - 2*padding_h;
 
         uint32_t smem_load_idx = 0;
         uint32_t smem_store_idx = 0;
@@ -127,27 +74,27 @@ namespace lotus {
         auto LoadFromGlobal = [&]() {
             #pragma unroll
             for(uint32_t i=0; i<4; ++i) {
-                bool k_guard = thread_offset_k_w+i<kernel_size && thread_offset_k_h<k_num;
+                bool k_guard = thread_offset_k_x+i<kernel_size && thread_offset_k_y<k_num;
                 if(k_guard) {
-                    ldgsts32(&k_smem[smem_store_idx][thread_offset_sts_k_h][thread_offset_sts_k_w+i], k+thread_offset_k_h*kernel_size+thread_offset_k_w+i, 1);
+                    ldgsts32(&k_smem[smem_store_idx][thread_offset_sts_k_y][thread_offset_sts_k_x+i], k+thread_offset_k_y*kernel_size+thread_offset_k_x+i, 1);
                 } else {
-                    k_smem[smem_store_idx][thread_offset_sts_k_h][thread_offset_sts_k_w+i] = 0.f;
+                    k_smem[smem_store_idx][thread_offset_sts_k_y][thread_offset_sts_k_x+i] = 0.f;
                 }
             }
             #pragma unroll
             for(uint32_t i=0; i<4; ++i) {
-                uint32_t channel_idx = thread_offset_x_h / channel_size;
-                uint32_t row_idx_in_window = (thread_offset_x_h-channel_idx*channel_size) / k_w;
-                uint32_t col_idx_in_window = thread_offset_x_h-channel_idx*channel_size-row_idx_in_window*k_w;
-                uint32_t row_idx = (thread_offset_x_w+i)/y_w*stride_h+row_idx_in_window;
-                uint32_t col_idx = (thread_offset_x_w+i)%y_w*stride_w + col_idx_in_window;
+                uint32_t channel_idx = thread_offset_input_y / channel_size;
+                uint32_t row_idx_in_window = (thread_offset_input_y-channel_idx*channel_size) / k_w;
+                uint32_t col_idx_in_window = thread_offset_input_y-channel_idx*channel_size-row_idx_in_window*k_w;
+                uint32_t row_idx = (thread_offset_input_x+i)/output_w*stride_h+row_idx_in_window;
+                uint32_t col_idx = (thread_offset_input_x+i)%output_w*stride_w + col_idx_in_window;
 
-                bool x_guard = thread_offset_x_w+i<y_h*y_w && thread_offset_x_h<kernel_size && (row_idx>=padding_h && row_idx<padded_x_h-padding_h) && (col_idx>=padding_w && col_idx<padded_x_w-padding_w);
+                bool input_guard = thread_offset_input_x+i<output_h*output_w && thread_offset_input_y<kernel_size && (row_idx>=padding_h && row_idx<padded_input_h-padding_h) && (col_idx>=padding_w && col_idx<padded_input_w-padding_w);
 
-                if(x_guard) {
-                    ldgsts32(&x_smem[smem_store_idx][thread_offset_sts_x_h][thread_offset_sts_x_w+i], x+(row_idx-padding_h)*unpadded_x_w+(col_idx-padding_w)+channel_idx*unpadded_x_h*unpadded_x_w, 1);
+                if(input_guard) {
+                    ldgsts32(&input_smem[smem_store_idx][thread_offset_sts_input_y][thread_offset_sts_input_x+i], input+(row_idx-padding_h)*unpadded_input_w+(col_idx-padding_w)+channel_idx*unpadded_input_h*unpadded_input_w, 1);
                 } else {
-                    x_smem[smem_store_idx][thread_offset_sts_x_h][thread_offset_sts_x_w+i] = 0.f;
+                    input_smem[smem_store_idx][thread_offset_sts_input_y][thread_offset_sts_input_x+i] = 0.f;
                 } 
             }
         };
@@ -155,16 +102,16 @@ namespace lotus {
         auto LoadFromSmem = [&](uint32_t i_) {
             #pragma unroll
             for(uint32_t j=0; j<8; ++j) {
-                k_frag[frag_store_idx][j] = k_smem[smem_load_idx][thread_offset_blocktile_h+j][i_];
-                x_frag[frag_store_idx][j] = x_smem[smem_load_idx][i_][thread_offset_blocktile_w+j];
+                k_frag[frag_store_idx][j] = k_smem[smem_load_idx][thread_offset_blocktile_y+j][i_];
+                input_frag[frag_store_idx][j] = input_smem[smem_load_idx][i_][thread_offset_blocktile_x+j];
             }
         };
 
         auto ComputeThreadTile = [&]() {
             #pragma unroll
-            for(uint32_t h=0; h<8; ++h) {
-                for(uint32_t w=0; w<8; ++w) {
-                    y_frag[h][w] += k_frag[frag_load_idx][h]*x_frag[frag_load_idx][w];
+            for(uint32_t y=0; y<8; ++y) {
+                for(uint32_t x=0; x<8; ++x) {
+                    output_frag[y][x] += k_frag[frag_load_idx][y]*input_frag[frag_load_idx][x];
                 }
             }
         };
@@ -175,9 +122,9 @@ namespace lotus {
         wait();
         __syncthreads();
 
-        for(uint32_t k_step=0; k_step<(kernel_size+7)/8-1; ++k_step) {
-            thread_offset_k_w += 8;
-            thread_offset_x_h += 8;
+        for(uint32_t step=0; step<(kernel_size+7)/8-1; ++step) {
+            thread_offset_k_x += 8;
+            thread_offset_input_y += 8;
 
             LoadFromGlobal();
             smem_store_idx ^= 1;
@@ -218,16 +165,16 @@ namespace lotus {
         ComputeThreadTile();
 
         #pragma unroll
-        for(uint32_t h=0; h<8; ++h) {
-            for(uint32_t w=0; w<8; ++w) {
-                uint32_t i = thread_offset_y_h+h;
-                uint32_t j = thread_offset_y_w+w;
-                if(i<k_num && j<y_h*y_w) {
-                    float tmp = y_frag[h][w]+(use_bias?b[i]:0);
+        for(uint32_t y=0; y<8; ++y) {
+            for(uint32_t x=0; x<8; ++x) {
+                uint32_t entry_y = thread_offset_output_y+y;
+                uint32_t entry_x = thread_offset_output_x+x;
+                if(entry_y<k_num && entry_x<output_h*output_w) {
+                    float tmp = output_frag[y][x]+(use_bias?b[entry_y]:0);
                     if(af == ActivationFunction::RELU) {
-                        y[i*(y_h*y_w)+j] = tmp>0?tmp:0;
+                        output[entry_y*(output_h*output_w)+entry_x] = tmp>0?tmp:0;
                     } else {
-                        y[i*(y_h*y_w)+j] = tmp;
+                        output[entry_y*(output_h*output_w)+entry_x] = tmp;
                     }
                 }
             }

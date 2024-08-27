@@ -3,8 +3,8 @@
 
 namespace lotus {
 
-    dim3 MakeAAP2dGrid(uint32_t y_c, uint32_t y_h, uint32_t y_w) {
-        return {(y_w+7)/8, (y_h+7)/8, (y_c+7)/8};
+    dim3 MakeAAP2dGrid(uint32_t output_c, uint32_t output_h, uint32_t output_w) {
+        return {(output_w+7)/8, (output_h+7)/8, (output_c+7)/8};
     };
 
     dim3 MakeAAP2dBlock() {
@@ -12,31 +12,31 @@ namespace lotus {
     };
 
 
-    __global__ void sadaptive_avgpool2d(const float* x, float* y, 
+    __global__ void sadaptive_avgpool2d(const float* input, float* output, 
                                         const uint32_t kernel_h, const uint32_t kernel_w, 
-                                        const uint32_t x_c, const uint32_t x_h, const uint32_t x_w,  
+                                        const uint32_t input_c, const uint32_t input_h, const uint32_t input_w,  
                                         const float stride_h, const float stride_w, 
-                                        const uint32_t y_h, const uint32_t y_w)
+                                        const uint32_t output_h, const uint32_t output_w)
     {
 
-        uint32_t thread_offset_y_h = blockIdx.y*8 + threadIdx.y;
-        uint32_t thread_offset_y_w = blockIdx.x*8 + threadIdx.x;
-        uint32_t thread_offset_y_c = blockIdx.z*8 + threadIdx.z;
+        uint32_t thread_offset_output_y = blockIdx.y*8 + threadIdx.y;
+        uint32_t thread_offset_output_x = blockIdx.x*8 + threadIdx.x;
+        uint32_t thread_offset_output_z = blockIdx.z*8 + threadIdx.z;
 
-        if(thread_offset_y_h<y_h && thread_offset_y_w<y_w && thread_offset_y_c<x_c) {
+        if(thread_offset_output_y<output_h && thread_offset_output_x<output_w && thread_offset_output_z<input_c) {
 
-            uint32_t thread_offset_x_h = roundf(thread_offset_y_h*stride_h);
-            uint32_t thread_offset_x_w = roundf(thread_offset_y_w*stride_w);
-            uint32_t thread_offset_x_c = thread_offset_y_c;
+            uint32_t thread_offset_input_y = roundf(thread_offset_output_y*stride_h);
+            uint32_t thread_offset_input_x = roundf(thread_offset_output_x*stride_w);
+            uint32_t thread_offset_input_z = thread_offset_output_z;
 
             float sum = 0;
         
-            for(uint32_t i=0; i<kernel_h; ++i) {
-                for(uint32_t j=0; j<kernel_w; ++j) {
-                    sum += x[thread_offset_x_c*x_h*x_w + (thread_offset_x_h+i)*x_w + thread_offset_x_w+j];
+            for(uint32_t y=0; y<kernel_h; ++y) {
+                for(uint32_t x=0; x<kernel_w; ++x) {
+                    sum += input[thread_offset_input_z*input_h*input_w + (thread_offset_input_y+y)*input_w + thread_offset_input_x+x];
                 }
             }
-            y[thread_offset_y_c*y_h*y_w+thread_offset_y_h*y_w+thread_offset_y_w] = sum/(float)kernel_h/(float)kernel_w;
+            output[thread_offset_output_z*output_h*output_w+thread_offset_output_y*output_w+thread_offset_output_x] = sum/(float)kernel_h/(float)kernel_w;
         };
     };
 
