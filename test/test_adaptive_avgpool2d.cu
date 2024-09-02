@@ -1,5 +1,5 @@
+#include "lotus_utils.hpp"
 #include "operator/adaptive_avgpool2d.cuh"
-#include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xrandom.hpp"
@@ -62,11 +62,12 @@ int main()
 
     StreamPool pool(1);
 
-    sadaptive_avgpool2d<<<MakeAAP2dGrid(y_c, y_h, y_w), MakeAAP2dBlock(), 0, pool.Stream()>>>(d_x, d_y, 
+    AdaptiveAvgpool2d<<<MakeAAP2dGrid(y_c, y_h, y_w), MakeAAP2dBlock(), 0, pool.Stream()>>>(d_x, d_y, 
                                                                                               k_h, k_w, 
                                                                                               x_c, x_h, x_w,
                                                                                               stride_h, stride_w,
-                                                                                              y_h, y_w);
+                                                                                              y_h, y_w,
+                                                                                              ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, y_c*y_h*y_w*sizeof(float), cudaMemcpyDeviceToHost);
 

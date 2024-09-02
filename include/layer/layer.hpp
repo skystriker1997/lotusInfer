@@ -23,7 +23,6 @@ namespace lotus {
         const std::vector<std::string>& InputsName() {return inputs_name_;};
         const std::vector<std::string>& OutputsName() {return outputs_name_;};
         virtual void Forward() {};
-        void SetActivation(ActivationFunction af) {af_ = af;};
         virtual ~Layer() = default;
     };
 }

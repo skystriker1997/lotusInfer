@@ -16,11 +16,12 @@ namespace lotus {
 
         public:
         Maxpool2dLayer(const std::string& name,
-                                 const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
-                                 const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
-                                 const uint32_t kernel_h, const uint32_t kernel_w, 
-                                 const uint32_t stride_h, const uint32_t stride_w,
-                                 const uint32_t padding_h, const uint32_t padding_w);
+                       const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
+                       const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
+                       const uint32_t kernel_h, const uint32_t kernel_w, 
+                       const uint32_t stride_h, const uint32_t stride_w,
+                       const uint32_t padding_h, const uint32_t padding_w,
+                       ActivationFunction af);
         
         void Forward() override;
         ~Maxpool2dLayer() override = default;

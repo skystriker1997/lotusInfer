@@ -1,5 +1,6 @@
 #include "layer/layer_conv2d.hpp"
 
+
 namespace lotus {
 
     Conv2dLayer:: Conv2dLayer(const std::string& name,
@@ -9,7 +10,8 @@ namespace lotus {
                               const uint32_t k_num, const uint32_t k_c, const uint32_t k_h, const uint32_t k_w, 
                               const bool use_bias, const std::vector<char>& bias, 
                               const uint32_t stride_h, const uint32_t stride_w,
-                              const uint32_t padding_h, const uint32_t padding_w)
+                              const uint32_t padding_h, const uint32_t padding_w,
+                              ActivationFunction af)
     {   
         name_ = name;
         inputs_name_ = inputs_name;
@@ -27,6 +29,7 @@ namespace lotus {
         stride_w_ = stride_w;
         padding_h_ = padding_h;
         padding_w_ = padding_w;
+        af_ = af;
     };
 
 
@@ -54,7 +57,7 @@ namespace lotus {
 
             uint32_t x_c = x.Dim(0);
 
-            sconv2d<<<MakeConv2dGrid(y_c, y_h, y_w), MakeConv2dBlock(), 0, pool.Stream()>>>(x.Data(), 
+            Conv2d<<<MakeConv2dGrid(y_c, y_h, y_w), MakeConv2dBlock(), 0, pool.Stream()>>>(x.Data(), 
                                                                                             kernel_.Data(), 
                                                                                             use_bias_, bias_.Data(), 
                                                                                             y.Data(), 
@@ -64,52 +67,52 @@ namespace lotus {
                                                                                             stride_h_, stride_w_,
                                                                                             padding_h_, padding_w_, 
                                                                                             af_);
-
         }
         cudaDeviceSynchronize();
+            
     };
 
 
     std::shared_ptr<Conv2dLayer> MakeConv2dLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
-        CHECK(opt->inputs.size()==1) << "conv2d layer gets more than 1 input";  
-        CHECK(opt->outputs.size()==1) << "conv2d layer gets more than 1 output";
+        CHECK(opt->inputs.size()==1) << "conv2d layer is supposed to accept 1 input";  
+        CHECK(opt->outputs.size()==1) << "conv2d layer is supposed to generate 1 output";
 
         auto groups = opt->params.find("groups");
-        CHECK(groups != opt->params.end()) << "conv2d layer fails to find parameter 'groups'";
-        CHECK(groups->second.i == 1) << "conv2d layer gets more than 1 kernel group";
+        CHECK(groups != opt->params.end()) << "conv2d layer missing parameter 'groups'";
+        CHECK(groups->second.i == 1) << "conv2d layer supports only groups with value of 1";
 
         auto dilation = opt->params.find("dilation");
-        CHECK(dilation != opt->params.end()) << "conv2d layer fails to find parameter 'dilation'";
-        CHECK(dilation->second.ai[0]==1 && dilation->second.ai[1]==1) << "conv2d layer does not support kernel dilation greater than 1";
+        CHECK(dilation != opt->params.end()) << "conv2d layer missing parameter 'dilation'";
+        CHECK(dilation->second.ai[0]==1 && dilation->second.ai[1]==1) << "conv2d layer supports only kernel dilation with value of 1";
 
         auto in_channels = opt->params.find("in_channels");
-        CHECK(in_channels != opt->params.end()) << "conv2d layer fails to find parameter 'in_channels'";
+        CHECK(in_channels != opt->params.end()) << "conv2d layer missing parameter 'in_channels'";
 
         auto out_channels = opt->params.find("out_channels");
-        CHECK(out_channels != opt->params.end()) << "conv2d layer fails to find parameter 'out_channels'";
+        CHECK(out_channels != opt->params.end()) << "conv2d layer missing parameter 'out_channels'";
 
         auto padding = opt->params.find("padding");
-        CHECK(padding != opt->params.end()) << "conv2d layer fails to find parameter 'padding'";
+        CHECK(padding != opt->params.end()) << "conv2d layer missing parameter 'padding'";
 
         auto padding_mode = opt->params.find("padding_mode");
-        CHECK(padding_mode != opt->params.end()) << "conv2d layer fails to find parameter 'padding_mode'";
-        CHECK(padding_mode->second.s == "zeros") << "conv2d does not support padding mode other than zero padding";
+        CHECK(padding_mode != opt->params.end()) << "conv2d layer missing parameter 'padding_mode'";
+        CHECK(padding_mode->second.s == "zeros") << "conv2d layer supports only zero padding";
     
         auto use_bias = opt->params.find("bias");
-        CHECK(use_bias != opt->params.end()) << "conv2d layer fails to find parameter 'bias'";
+        CHECK(use_bias != opt->params.end()) << "conv2d layer missing parameter 'bias'";
 
         auto stride = opt->params.find("stride");
-        CHECK(stride != opt->params.end()) << "conv2d layer fails to find parameter 'stride'";
+        CHECK(stride != opt->params.end()) << "conv2d layer missing parameter 'stride'";
 
         auto kernel_size = opt->params.find("kernel_size");
-        CHECK(kernel_size != opt->params.end()) << "conv2d layer fails to find parameter 'kernel_size'";
+        CHECK(kernel_size != opt->params.end()) << "conv2d layer missing parameter 'kernel_size'";
 
         auto kernel = opt->attrs.find("weight");
-        CHECK(kernel != opt->attrs.end()) << "conv2d layer fails to find attribute 'kernel'";
+        CHECK(kernel != opt->attrs.end()) << "conv2d layer missing attribute 'kernel'";
 
         auto bias = opt->attrs.find("bias");
         if(use_bias->second.b) {
-            CHECK(bias != opt->attrs.end()) << "conv2d layer fails to find attribute 'bias'";
+            CHECK(bias != opt->attrs.end()) << "conv2d layer missing attribute 'bias'";
         }
 
         uint32_t k_num = out_channels->second.i;
@@ -121,18 +124,26 @@ namespace lotus {
         uint32_t padding_h = padding->second.ai[0];
         uint32_t padding_w = padding->second.ai[1];    
 
-         std::string input_name;
-        if(opt->inputs[0]->producer->type=="nn.ReLU") {
-            input_name = opt->inputs[0]->producer->inputs[0]->name;
+        std::vector<std::string> inputs_name = {opt->inputs[0]->name};
+
+        std::string output_name;
+        ActivationFunction af;
+        if(opt->outputs[0]->consumers[0]->type=="nn.ReLU") {
+            af = ActivationFunction::RELU;
+            output_name = opt->outputs[0]->consumers[0]->outputs[0]->name;
+        } else if(opt->outputs[0]->consumers[0]->type=="F.sigmoid") {
+            af = ActivationFunction::SIGMOID;
+            output_name = opt->outputs[0]->consumers[0]->outputs[0]->name;
         } else {
-            input_name = opt->inputs[0]->name;
+            af = ActivationFunction::NONE;
+            output_name = opt->outputs[0]->name;
         }
-        std::vector<std::string> inputs_name = {input_name};
-        std::vector<std::string> outputs_name = {opt->outputs[0]->name};
+        std::vector<std::string> outputs_name = {output_name};
+
         auto input = operands.find(inputs_name[0]);
-        CHECK(input != operands.end()) << "conv2d layer fails to find the input operand";
+        CHECK(input != operands.end()) << "conv2d layer missing input operand";
         auto output = operands.find(outputs_name[0]);
-        CHECK(output != operands.end()) << "conv2d layer fails to find the output operand";
+        CHECK(output != operands.end()) << "conv2d layer missing output operand";
 
         std::vector<std::shared_ptr<Operand>> inputs = {input->second};
         std::vector<std::shared_ptr<Operand>> outputs = {output->second};
@@ -146,6 +157,7 @@ namespace lotus {
                                              k_num, k_c, k_h, k_w,
                                              use_bias->second.b, use_bias->second.b?bias->second.data:empty_bias,
                                              stride_h, stride_w,
-                                             padding_h, padding_w);
+                                             padding_h, padding_w,
+                                             af);
     };
 }

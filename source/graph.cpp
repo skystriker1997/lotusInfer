@@ -36,7 +36,7 @@ namespace lotus {
             topo_queue.pop();
         }
 
-        CHECK(topo_sorted_layers_.size() == layers_.size()) << "the pnnx graph is not a directed acyclic one";
+        CHECK(topo_sorted_layers_.size() == layers_.size()) << "the pnnx graph is supposed to be directed acyclic";
     };
 
 
@@ -47,17 +47,21 @@ namespace lotus {
 
         CHECK(pnnx_graph.load(param_path, bin_path) == 0) << "incorrect model parameter path or model coefficient path";
 
-        std::vector<std::string> layer_need_relu_activation;
-
         for(pnnx::Operand *opd: pnnx_graph.operands) {
-
-            if(opd->producer->type == "nn.ReLU") {
-                continue;
+            if(opd->producer->type == "pnnx.Input") {
+                CHECK(input_operand_.empty()) << "the graph is supposed to accept 1 input";
+                input_operand_ = opd->name;
+            }
+           
+            if(opd->consumers[0]->type == "pnnx.Output") {
+                CHECK(output_operand_.empty()) << "the graph is supposed to generate 1 output";
+                output_operand_ = opd->name;
+                std::cout << "output operand is " << output_operand_ << std::endl;
             }
 
             auto operand = std::make_shared<Operand>();
 
-            CHECK(opd->type == 1) << "lotusInfer does not support data type other than float32";
+            CHECK(opd->type == 1) << "lotusInfer supports only float32 up to now";
             std::vector<uint32_t> shape(opd->shape.size());
             for(size_t i=0; i<opd->shape.size(); ++i) {
                 if(i==0) {
@@ -71,32 +75,14 @@ namespace lotus {
             operand->name_ = opd->name;
             operand->producer_ = opd->producer->name;
             for(pnnx::Operator* consumer : opd->consumers) {
-                std::string type = consumer->type;
-                if(type != "nn.ReLU") {
-                    operand->consumers_.emplace_back(consumer->name);
-                } else {
-                    for(pnnx::Operator* _consumer : consumer->outputs[0]->consumers) {
-                        operand->consumers_.emplace_back(_consumer->name);
-                    }
-                    layer_need_relu_activation.emplace_back(opd->producer->name);
-                }
+                operand->consumers_.emplace_back(consumer->name);
             }
 
             operands_.insert({operand->name_, operand});
-
-            if(opd->producer->type == "pnnx.Input") {
-                CHECK(input_operand_.empty()) << "the graph accepts only one input";
-                input_operand_ = opd->name;
-            }
-           
-            if(opd->consumers[0]->type == "pnnx.Output") {
-                CHECK(output_operand_.empty()) << "the graph accepts only one output";
-                output_operand_ = opd->name;
-            }
         }
 
         for(pnnx::Operator *opt: pnnx_graph.ops) {
-            if(opt->type == "pnnx.Input" || opt->type == "pnnx.Output" || opt->type == "nn.ReLU")
+            if(opt->type == "pnnx.Input" || opt->type == "pnnx.Output" || opt->type == "nn.ReLU" || opt->type == "F.sigmoid")
                 continue;
             CHECK(layers_.find(opt->name) == layers_.end()) << "duplicate layer names";
             if(opt->type == "nn.Conv2d") {
@@ -111,19 +97,18 @@ namespace lotus {
                 layers_.insert({opt->name, MakeLinearLayer(opt, operands_)});
             } else if(opt->type == "pnnx.Expression") {
                 layers_.insert({opt->name, MakeExpressionLayer(opt, operands_)});
+            } else if(opt->type == "torch.cat") {
+                layers_.insert({opt->name, MakeCatLayer(opt, operands_)});
+            } else if(opt->type == "nn.ConvTranspose2d") {
+                layers_.insert({opt->name, MakeTransposedConv2dLayer(opt, operands_)});
             } else {
                 CHECK(false) << "lotusInfer does not support layer " << opt->type << " up to now";
             }
         }
 
-        for(auto& layer: layer_need_relu_activation) {
-            layers_[layer]->SetActivation(ActivationFunction::RELU);
-        }
-
         TopoSortLayers();
 
     }
-
 
 
     void Graph::InitialiseInput(const std::vector<float>& input) {

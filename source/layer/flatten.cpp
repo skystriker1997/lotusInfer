@@ -3,11 +3,9 @@
 
 namespace lotus {
 
-    FlattenLayer::FlattenLayer(
-                            const std::string& name,
-                            const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
-                            const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs
-                            )
+    FlattenLayer::FlattenLayer(const std::string& name,
+                               const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
+                               const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs)
     {   
         name_ = name;
         inputs_name_ = inputs_name;
@@ -34,21 +32,15 @@ namespace lotus {
 
 
     std::shared_ptr<FlattenLayer> MakeFlattenLayer(pnnx::Operator *opt, const std::map<std::string, std::shared_ptr<Operand>>& operands) {
-        CHECK(opt->inputs.size()==1) << "flatten layer gets more than 1 input";  
-        CHECK(opt->outputs.size()==1) << "flatten layer gets more than 1 output";
-
-        std::string input_name;
-        if(opt->inputs[0]->producer->type=="nn.ReLU") {
-            input_name = opt->inputs[0]->producer->inputs[0]->name;
-        } else {
-            input_name = opt->inputs[0]->name;
-        }
-        std::vector<std::string> inputs_name = {input_name};
+        CHECK(opt->inputs.size()==1) << "flatten layer is supposed to accept 1 input";  
+        CHECK(opt->outputs.size()==1) << "flatten layer is supposed to generate 1 output";
+        
+        std::vector<std::string> inputs_name = {opt->inputs[0]->name};
         std::vector<std::string> outputs_name = {opt->outputs[0]->name};
         auto input = operands.find(inputs_name[0]);
-        CHECK(input != operands.end()) << "flatten layer fails to find the input operand";
+        CHECK(input != operands.end()) << "flatten layer missing input operand";
         auto output = operands.find(outputs_name[0]);
-        CHECK(output != operands.end()) << "flatten layer fails to find the output operand";
+        CHECK(output != operands.end()) << "flatten layer missing output operand";
 
         std::vector<std::shared_ptr<Operand>> inputs = {input->second};
         std::vector<std::shared_ptr<Operand>> outputs = {output->second};

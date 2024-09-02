@@ -1,7 +1,5 @@
 #include "operator/add.cuh"
-#include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
-#include "xtensor/xview.hpp"
 #include "xtensor/xrandom.hpp"
 
 
@@ -50,7 +48,7 @@ int main()
 
     StreamPool pool(1);
 
-    sadd<<<MakeAddGrid(size), MakeAddBlock(), 0, pool.Stream()>>>(d_x1, d_x2, d_y, size, ActivationFunction::NONE);
+    Add<<<MakeAddGrid(size), MakeAddBlock(), 0, pool.Stream()>>>(d_x1, d_x2, d_y, size, ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, size*sizeof(float), cudaMemcpyDeviceToHost);
 

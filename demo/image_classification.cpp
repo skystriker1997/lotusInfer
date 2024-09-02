@@ -1,9 +1,6 @@
 #include "graph.hpp"
 #include <opencv2/opencv.hpp>
-#include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xrandom.hpp"
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xsort.hpp>
 #include <chrono>
@@ -57,7 +54,7 @@ int main(int argc, char* argv[]) {
 
     cv::Mat image = cv::imread(image_path);
 
-    CHECK(!image.empty()) << "opencv fails to load image";
+    CHECK(!image.empty()) << "error loading image";
 
     std::vector<float> data(224*224*3);
     PreprocessImage(image, data);

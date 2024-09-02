@@ -30,6 +30,6 @@ add_library(graph source/graph.cpp)
 target_link_libraries(graph PUBLIC layer pnnx)
 
 add_subdirectory(test)
-add_subdirectory(demo/image_classification)
+add_subdirectory(demo)
 
 

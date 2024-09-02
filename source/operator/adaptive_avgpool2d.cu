@@ -12,13 +12,13 @@ namespace lotus {
     };
 
 
-    __global__ void sadaptive_avgpool2d(const float* input, float* output, 
+    __global__ void AdaptiveAvgpool2d(const float* input, float* output, 
                                         const uint32_t kernel_h, const uint32_t kernel_w, 
                                         const uint32_t input_c, const uint32_t input_h, const uint32_t input_w,  
                                         const float stride_h, const float stride_w, 
-                                        const uint32_t output_h, const uint32_t output_w)
+                                        const uint32_t output_h, const uint32_t output_w,
+                                        ActivationFunction af)
     {
-
         uint32_t thread_offset_output_y = blockIdx.y*8 + threadIdx.y;
         uint32_t thread_offset_output_x = blockIdx.x*8 + threadIdx.x;
         uint32_t thread_offset_output_z = blockIdx.z*8 + threadIdx.z;
@@ -36,7 +36,18 @@ namespace lotus {
                     sum += input[thread_offset_input_z*input_h*input_w + (thread_offset_input_y+y)*input_w + thread_offset_input_x+x];
                 }
             }
-            output[thread_offset_output_z*output_h*output_w+thread_offset_output_y*output_w+thread_offset_output_x] = sum/(float)kernel_h/(float)kernel_w;
+
+            float result = sum/(float)kernel_h/(float)kernel_w;
+
+            uint32_t offset = thread_offset_output_z*output_h*output_w+thread_offset_output_y*output_w+thread_offset_output_x;
+            
+            if(af==ActivationFunction::RELU) {
+                output[offset] = result>0?result:0;
+            } else if(af==ActivationFunction::SIGMOID) {
+                output[offset] = 1.f/(1.f+exp (-result));
+            } else {
+                output[offset] = result;
+            }
         };
     };
 

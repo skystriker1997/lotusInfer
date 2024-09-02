@@ -8,6 +8,6 @@ namespace lotus {
 
     dim3 MakeAddBlock();
 
-    __global__ void sadd(const float* x1, const float* x2, float* y, uint32_t size, ActivationFunction af);
+    __global__ void Add(const float* x1, const float* x2, float* y, uint32_t size, ActivationFunction af);
                              
 }

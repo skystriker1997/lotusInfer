@@ -1,5 +1,4 @@
 #include "operator/conv2d.cuh"
-#include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xrandom.hpp"
@@ -76,9 +75,9 @@ int main()
     uint32_t unpadded_x_w = padded_x_w - 2*padding_w;
    
     xt::random::seed(0);
-    xt::xarray<float> x = xt::random::randint<int>({x_c, unpadded_x_h, unpadded_x_w}, 0, 100);
-    xt::xarray<float> k = xt::random::randint<int>({k_num, k_c,k_h,k_w}, 0, 100);
-    xt::xarray<float> b = xt::random::randint<int>({k_num}, 0, 100);
+    xt::xarray<float> x = xt::random::randint<int>({x_c, unpadded_x_h, unpadded_x_w}, -10, 10);
+    xt::xarray<float> k = xt::random::randint<int>({k_num, k_c,k_h,k_w}, -10, 10);
+    xt::xarray<float> b = xt::random::randint<int>({k_num}, -10, 10);
 
     float* d_x;
     float* d_k;
@@ -98,7 +97,7 @@ int main()
 
     StreamPool pool(1);
 
-    sconv2d<<<MakeConv2dGrid(y_c, y_h, y_w), MakeConv2dBlock(), 0, pool.Stream()>>>(d_x, 
+    Conv2d<<<MakeConv2dGrid(y_c, y_h, y_w), MakeConv2dBlock(), 0, pool.Stream()>>>(d_x, 
                                                                                     d_k, 
                                                                                     true, d_b, 
                                                                                     d_y, 

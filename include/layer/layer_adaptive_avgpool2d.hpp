@@ -11,10 +11,11 @@ namespace lotus {
         uint32_t output_w_;
 
         public:
-        AdaptiveAvgpool2dLayer( const std::string& name,
-                                const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
-                                const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
-                                const uint32_t output_h, const uint32_t output_w);
+        AdaptiveAvgpool2dLayer(const std::string& name,
+                               const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
+                               const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
+                               const uint32_t output_h, const uint32_t output_w,
+                               ActivationFunction af);
         
         void Forward() override;
         ~AdaptiveAvgpool2dLayer() override = default;

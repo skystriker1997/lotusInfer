@@ -12,13 +12,12 @@ namespace lotus {
         Tensor bias_;
 
         public:
-        LinearLayer(
-                    const std::string& name,
+        LinearLayer(const std::string& name,
                     const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
                     const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
                     const std::vector<char>& weight, const uint32_t in_features, const uint32_t out_features,
-                    const bool use_bias, const std::vector<char>& bias
-                    );
+                    const bool use_bias, const std::vector<char>& bias,
+                    ActivationFunction af);
                     
 
         void Forward() override;

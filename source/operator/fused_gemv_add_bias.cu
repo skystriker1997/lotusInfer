@@ -12,7 +12,7 @@ namespace lotus {
     };
 
 
-    __device__ __forceinline__ void reduce_add(float* input_tile, float* weight_tile, float& result) 
+    __device__ __forceinline__ void ReduceAdd(float* input_tile, float* weight_tile, float& result) 
     {  
         #pragma unroll
         for(uint32_t i=0; i<4; ++i) {
@@ -38,7 +38,7 @@ namespace lotus {
 
 
 
-    __global__ void sfgemva(const float *input, const float *weight, const float* bias, float *output, uint32_t weight_h, uint32_t weight_w, bool use_bias, ActivationFunction af) 
+    __global__ void Fgemva(const float *input, const float *weight, const float* bias, float *output, uint32_t weight_h, uint32_t weight_w, bool use_bias, ActivationFunction af) 
     {
         float result = 0;
 
@@ -77,21 +77,23 @@ namespace lotus {
             LoadFromGlobal();
             store_idx ^= 1;
 
-            reduce_add(&input_tile[load_idx][0], &weight_tile[load_idx][threadIdx.y][0], result);
+            ReduceAdd(&input_tile[load_idx][0], &weight_tile[load_idx][threadIdx.y][0], result);
             load_idx ^= 1;
 
             wait();
             __syncthreads();
         }
 
-        reduce_add(&input_tile[load_idx][0], &weight_tile[load_idx][threadIdx.y][0], result);
+        ReduceAdd(&input_tile[load_idx][0], &weight_tile[load_idx][threadIdx.y][0], result);
 
         if(threadIdx.x==0) {
-            float tmp = result + (use_bias?bias[offset_weight_y]:0);
+            result += use_bias?bias[offset_weight_y]:0.f;
             if(af == ActivationFunction::RELU) {
-                output[offset_weight_y] = tmp>0?tmp:0;
+                output[offset_weight_y] = result>0?result:0;
+            } else if(af == ActivationFunction::SIGMOID) {
+                output[offset_weight_y] = 1.f/(1.f+exp (-result));
             } else {
-                output[offset_weight_y] = tmp;
+                output[offset_weight_y] = result;
             }
         }
     };

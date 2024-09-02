@@ -60,7 +60,7 @@ int main() {
 
     StreamPool pool(1);
 
-    sfgemva<<<MakeSFgemvaGrid(a_h), MakeSFgemvaBlock(), 0, pool.Stream()>>>(d_x, d_a, d_b, d_y, a_h, a_w, true, ActivationFunction::NONE);
+    Fgemva<<<MakeSFgemvaGrid(a_h), MakeSFgemvaBlock(), 0, pool.Stream()>>>(d_x, d_a, d_b, d_y, a_h, a_w, true, ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, a_h * sizeof(float), cudaMemcpyDeviceToHost);
 

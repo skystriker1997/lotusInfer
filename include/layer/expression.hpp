@@ -9,12 +9,11 @@ namespace lotus {
         std::string expression_;
         void Parse();
         public:
-        ExpressionLayer(
-                    const std::string& name,
-                    const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
-                    const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
-                    const std::string expression
-                    );
+        ExpressionLayer(const std::string& name,
+                        const std::vector<std::string>& inputs_name, const std::vector<std::string>& outputs_name,
+                        const std::vector<std::shared_ptr<Operand>>& inputs, const std::vector<std::shared_ptr<Operand>>& outputs,
+                        const std::string expression,
+                        ActivationFunction af);
                     
         void ParseExpression();
         void Forward() override;

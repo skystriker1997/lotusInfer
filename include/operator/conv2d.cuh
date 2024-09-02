@@ -8,7 +8,7 @@ namespace lotus {
 
     dim3 MakeConv2dBlock();
 
-    __global__ void sconv2d(const float* input, 
+    __global__ void Conv2d(const float* input, 
                             const float* k, 
                             bool use_bias, const float* b, 
                             float* output, 

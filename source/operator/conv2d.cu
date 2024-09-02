@@ -1,5 +1,6 @@
 #include "operator/conv2d.cuh"
 
+
 namespace lotus {
 
 
@@ -13,7 +14,7 @@ namespace lotus {
     };
 
 
-    __global__ void sconv2d(const float* input, 
+    __global__ void Conv2d(const float* input, 
                             const float* k, 
                             bool use_bias, const float* b, 
                             float* output, 
@@ -170,11 +171,14 @@ namespace lotus {
                 uint32_t entry_y = thread_offset_output_y+y;
                 uint32_t entry_x = thread_offset_output_x+x;
                 if(entry_y<k_num && entry_x<output_h*output_w) {
-                    float tmp = output_frag[y][x]+(use_bias?b[entry_y]:0);
+                    float result = output_frag[y][x]+(use_bias?b[entry_y]:0);
+                    uint32_t offset = entry_y*(output_h*output_w)+entry_x;
                     if(af == ActivationFunction::RELU) {
-                        output[entry_y*(output_h*output_w)+entry_x] = tmp>0?tmp:0;
+                        output[offset] = result>0?result:0;
+                    } else if(af == ActivationFunction::SIGMOID) {
+                        output[offset] = 1.f/(1.f+exp (-result));
                     } else {
-                        output[entry_y*(output_h*output_w)+entry_x] = tmp;
+                        output[offset] = result;
                     }
                 }
             }

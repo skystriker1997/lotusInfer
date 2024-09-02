@@ -1,5 +1,5 @@
+#include "lotus_utils.hpp"
 #include "operator/maxpool2d.cuh"
-#include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xrandom.hpp"
@@ -71,12 +71,13 @@ int main()
 
     StreamPool pool(1);
 
-    smaxpool2d<<<MakeMP2dGrid(y_c, y_h, y_w), MakeMP2dBlock(), 0, pool.Stream()>>>(d_x, d_y, 
+    Maxpool2d<<<MakeMP2dGrid(y_c, y_h, y_w), MakeMP2dBlock(), 0, pool.Stream()>>>(d_x, d_y, 
                                                                                    k_h, k_w, 
                                                                                    x_c, padded_x_h, padded_x_w,
                                                                                    padding_h, padding_w,
                                                                                    stride_h, stride_w,
-                                                                                   y_h, y_w);
+                                                                                   y_h, y_w,
+                                                                                   ActivationFunction::NONE);
 
     cudaMemcpy(h_y, d_y, y_c*y_h*y_w*sizeof(float), cudaMemcpyDeviceToHost);
 

@@ -11,14 +11,16 @@ namespace lotus {
         return {256};
     };
 
-    __global__ void sadd(const float* x1, const float* x2, float* y, uint32_t size, ActivationFunction af) {
+    __global__ void Add(const float* x1, const float* x2, float* y, uint32_t size, ActivationFunction af) {
         uint32_t offset = blockIdx.x*256 + threadIdx.x;
         if(offset<size) {
-            float tmp = x1[offset] + x2[offset];
+            float result = x1[offset] + x2[offset];
             if(af==ActivationFunction::RELU) {
-                y[offset] = tmp>0?tmp:0; 
+                y[offset] = result>0?result:0; 
+            } else if(af==ActivationFunction::SIGMOID) {
+                y[offset] = 1.f/(1.f+exp (-result));
             } else {
-                y[offset] = tmp;
+                y[offset] = result;
             }
         }
     };

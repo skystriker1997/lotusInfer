@@ -1,6 +1,7 @@
 #include "operator/maxpool2d.cuh"
 
 
+
 namespace lotus {
 
     dim3 MakeMP2dGrid(uint32_t output_c, uint32_t output_h, uint32_t output_w) {
@@ -12,12 +13,13 @@ namespace lotus {
     };
 
 
-    __global__ void smaxpool2d(const float* input, float* output, 
+    __global__ void Maxpool2d(const float* input, float* output, 
                                const uint32_t kernel_h, const uint32_t kernel_w, 
                                const uint32_t input_c, const uint32_t padded_input_h, const uint32_t padded_input_w,  
                                const uint32_t padding_h, const uint32_t padding_w, 
                                const uint32_t stride_h, const uint32_t stride_w, 
-                               const uint32_t output_h, const uint32_t output_w)
+                               const uint32_t output_h, const uint32_t output_w,
+                               ActivationFunction af)
     {
 
         uint32_t thread_offset_output_y = blockIdx.y*8 + threadIdx.y;
@@ -52,7 +54,14 @@ namespace lotus {
                 }
             }
 
-            output[thread_offset_output_z*output_h*output_w+thread_offset_output_y*output_w+thread_offset_output_x] = max;
+            uint32_t offset = thread_offset_output_z*output_h*output_w+thread_offset_output_y*output_w+thread_offset_output_x;
+            if(af == ActivationFunction::RELU) {
+                output[offset] = max>0?max:0;
+            } else if(af == ActivationFunction::SIGMOID) {
+                output[offset] = 1.f/(1.f+exp (-max));
+            } else {
+                output[offset] = max;
+            }
         };
     };
 

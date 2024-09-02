@@ -23,7 +23,8 @@ namespace lotus {
                     const uint32_t k_num, const uint32_t k_c, const uint32_t k_h, const uint32_t k_w, 
                     const bool use_bias, const std::vector<char>& bias, 
                     const uint32_t stride_h, const uint32_t stride_w,
-                    const uint32_t padding_h, const uint32_t padding_w);
+                    const uint32_t padding_h, const uint32_t padding_w,
+                    ActivationFunction af);
                                  
         
         void Forward() override;

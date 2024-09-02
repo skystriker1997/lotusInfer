@@ -40,7 +40,8 @@ namespace lotus {
 
     enum ActivationFunction {
         NONE,
-        RELU
+        RELU,
+        SIGMOID
     };
 
 

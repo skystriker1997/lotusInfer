@@ -6,6 +6,8 @@
 #include "layer/linear.hpp"
 #include "layer/layer_conv2d.hpp"
 #include "layer/expression.hpp"
+#include "layer/concatenate.hpp"
+#include "layer/layer_transposed_conv2d.hpp"
 
 
 namespace lotus {
