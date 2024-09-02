@@ -33,7 +33,7 @@ $ cmake .. && make -j
 ## U-Net Demo
 ![CT scan](models/unet/TCGA_CS_4944.png)  
 source of image: [mateuszbuda/brain-segmentation-pytorch](https://github.com/mateuszbuda/brain-segmentation-pytorch/raw/master/assets/TCGA_CS_4944.png)  
-On my device, lotusInfer takes only 0.66 seconds to execute the U-Net model and correctly figure out the abnormal area as below
+On my device, lotusInfer takes only 0.66 seconds to execute the U-Net model and correctly figure out the abnormal area as below  
 ![abnormal area](records/abnormal_organization.png)
 
 ## resnet18 Demo
