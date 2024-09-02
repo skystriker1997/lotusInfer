@@ -1,19 +1,8 @@
-```
-  ████            █████                       █████               ██████                    
-░░███           ░░███                       ░░███               ███░░███                   
- ░███   ██████  ███████   █████ ████  █████  ░███  ████████    ░███ ░░░   ██████  ████████ 
- ░███  ███░░███░░░███░   ░░███ ░███  ███░░   ░███ ░░███░░███  ███████    ███░░███░░███░░███
- ░███ ░███ ░███  ░███     ░███ ░███ ░░█████  ░███  ░███ ░███ ░░░███░    ░███████  ░███ ░░░ 
- ░███ ░███ ░███  ░███ ███ ░███ ░███  ░░░░███ ░███  ░███ ░███   ░███     ░███░░░   ░███     
- █████░░██████   ░░█████  ░░████████ ██████  █████ ████ █████  █████    ░░██████  █████    
-░░░░░  ░░░░░░     ░░░░░    ░░░░░░░░ ░░░░░░  ░░░░░ ░░░░ ░░░░░  ░░░░░      ░░░░░░  ░░░░░     
-```
-
-                                                      
+![logo](logo/logo.png)
 
 ## Overview
 
-lotusInfer is a lite-weight deep learning inference framework, supporting CUDA accleration. The framework includes implemented CUDA operators like 2D-convolution, matrix-vector multiplication and pooling, with ongoing development of additional operators such as transposed 2D-convolution. The long-term goal is to make this framework powerful enough to support forefront Large Language Model (LLM) inference.
+lotusInfer is a lite-weight deep learning inference framework, supporting CUDA accleration. The framework includes implemented CUDA operators like 2D-convolution, matrix-vector multiplication and pooling, with ongoing development of additional operators such as transformer. The long-term goal is to make this framework powerful enough to support forefront Large Language Model (LLM) inference.
 
 
 ## Main Features
@@ -41,19 +30,19 @@ $ cd lotusInfer && mkdir build && cd build
 $ cmake .. && make -j
 ```
 
-## AlexNet Demo
-![Samoyed](models/alexnet/Samoyed.jpg)
-![alexnet_speedtest](records/alexnet%20timing.png)
-lotusInfer takes only 0.599 seconds to correctly figure out the type of image object with AlexNet 
+## U-Net Demo
+source of image: [https://github.com/mateuszbuda/brain-segmentation-pytorch/raw/master/assets/TCGA_CS_4944.png](https://github.com/mateuszbuda/brain-segmentation-pytorch/raw/master/assets/TCGA_CS_4944.png)
+![CT scan](models/unet/TCGA_CS_4944.png)
+On my device, lotusInfer takes only 0.66 seconds to execute the U-Net model and correctly figure out the abnormal area as below
+![abnormal area](records/abnormal_organization.png)
 
 ## resnet18 Demo
-![German_Shepherd](models/resnet/German_Shepherd.jpg)
-![resnet18_speedtest](records/Recording_resnet_infer.gif)  
-lotusInfer takes only 0.66 seconds to correctly figure out the type of image object with resnet18
+![German_Shepherd](models/resnet/German_Shepherd.jpg) 
+On my device, lotusInfer takes only 0.66 seconds to execute the resnet18 model and correctly classify the object as a German shepherd
+![resnet18_speedtest](records/Recording_resnet_infer.gif) 
 
 ## TO-DO List
-1. Implement transposed-2D convolution to support UNet
-2. Implement transformer to support LLM
+1. Implement transformer to support LLM
 
 
 
