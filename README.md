@@ -6,9 +6,9 @@ lotusInfer is a lite-weight deep learning inference framework, supporting CUDA a
 
 
 ## Main Features
-- **Pure CUDA**: Operators are developed entirely from scratch, with no dependency on cuBLAS or cuDNN
-- **Outstanding Performance**: Optimizations are implemented to greatly exploit GPU architecture
-- **Operator Fusion**: Activation and addition are fused into preceding operator to improve computation/memory accessing ratio
+- **High Independency**: Operators are developed entirely from scratch, without reliance on cuBLAS or cuDNN
+- **Outstanding Performance**: Fine-grained operators leverage both CUDA cores and Tensor Cores to fully exploit the NVIDIA GPU architecture
+- **Operator Fusion**: Activation and addition functions are embedded into preceding operator to optimize computation/memory accessing ratio
 - **High Clarity**: The graph is constructed in a straightforward and clear manner
 
 
