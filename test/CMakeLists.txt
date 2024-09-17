@@ -1,4 +1,4 @@
-find_package(xtensor REQUIRED)
+find_package (Eigen3 3.3 REQUIRED)
 
 add_executable(test_fgemva test_fused_gemv_add_bias.cu)
 target_link_libraries(test_fgemva PUBLIC operator)
@@ -23,6 +23,8 @@ add_executable(test_transposed_conv2d test_transposed_conv2d.cu)
 target_include_directories(test_transposed_conv2d PUBLIC ${xtensor_INCLUDE_DIRS})
 target_link_libraries(test_transposed_conv2d PUBLIC operator xtensor)
 
-
+add_executable(test_gemm test_gemm.cu)
+target_include_directories(test_gemm PUBLIC Eigen3::Eigen)
+target_link_libraries(test_gemm PUBLIC operator Eigen3::Eigen)
 
 

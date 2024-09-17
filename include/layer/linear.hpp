@@ -1,6 +1,6 @@
 #pragma once
 #include "layer/layer.hpp"
-#include "operator/fused_gemv_add_bias.cuh"
+#include "operator/gemm_tensorcore.cuh"
 
 namespace lotus {
     class LinearLayer: public Layer {

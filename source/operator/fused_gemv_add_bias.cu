@@ -1,3 +1,4 @@
+#include "lotus_utils.hpp"
 #include "operator/fused_gemv_add_bias.cuh"
 
 
@@ -52,14 +53,22 @@ namespace lotus {
         uint32_t store_idx = 0;
 
         auto LoadFromGlobal = [&]() {
-            for(uint32_t i=0; i<4; ++i) {
-                bool guard = weight_w>(offset_weight_x+i) && weight_h>offset_weight_y;
-                if(guard) {
-                    ldgsts32(&weight_tile[0][threadIdx.y][threadIdx.x*4+i], &weight[offset_weight_y*weight_w+offset_weight_x+i], 1);
-                    ldgsts32(&input_tile[0][threadIdx.x*4+i], input+offset_weight_x+i, 1);
-                } else {
-                    weight_tile[store_idx][threadIdx.y][threadIdx.x*4+i] = 0;
-                    input_tile[store_idx][threadIdx.x*4+i] = 0;
+            if(weight_w%4 == 0) {
+                uint32_t access_size = weight_w-offset_weight_x;
+                if(threadIdx.y==0) {
+                    ldgsts128(&input_tile[store_idx][threadIdx.x * 4], input+offset_weight_x, access_size);
+                }
+                ldgsts128(&weight_tile[store_idx][threadIdx.y][threadIdx.x * 4], weight+offset_weight_y*weight_w+offset_weight_x, access_size);
+            } else {
+                for(uint32_t i=0; i<4; ++i) {
+                    bool guard = weight_w>(offset_weight_x+i) && weight_h>offset_weight_y;
+                    if(guard) {
+                        ldgsts32(&weight_tile[store_idx][threadIdx.y][threadIdx.x*4+i], &weight[offset_weight_y*weight_w+offset_weight_x+i], 1);
+                        ldgsts32(&input_tile[store_idx][threadIdx.x*4+i], input+offset_weight_x+i, 1);
+                    } else {
+                        weight_tile[store_idx][threadIdx.y][threadIdx.x*4+i] = 0;
+                        input_tile[store_idx][threadIdx.x*4+i] = 0;
+                    }
                 }
             }
         };

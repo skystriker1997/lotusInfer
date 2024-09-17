@@ -1,4 +1,4 @@
-#include "operator/conv2d.cuh"
+#include "operator/conv2d_tensorcore.cuh"
 #include "xtensor/xio.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xrandom.hpp"
@@ -54,17 +54,17 @@ int main()
 {
     using namespace lotus;
 
-    uint32_t padded_x_h = 257;
-    uint32_t padded_x_w = 257;
+    uint32_t padded_x_h = 64;
+    uint32_t padded_x_w = 64;
     uint32_t x_c = 3;
-    uint32_t k_num = 32;
+    uint32_t k_num = 16;
     uint32_t k_c = 3;
-    uint32_t k_h = 9;
-    uint32_t k_w = 9;
-    uint32_t stride_h = 2;
-    uint32_t stride_w = 2;;
-    uint32_t padding_h = 4;
-    uint32_t padding_w = 4;
+    uint32_t k_h = 4;
+    uint32_t k_w = 4;
+    uint32_t stride_h = 4;
+    uint32_t stride_w = 4;;
+    uint32_t padding_h = 0;
+    uint32_t padding_w = 0;
 
     uint32_t y_c = k_num;
 
@@ -75,8 +75,8 @@ int main()
     uint32_t unpadded_x_w = padded_x_w - 2*padding_w;
    
     xt::random::seed(0);
-    xt::xarray<float> x = xt::random::randint<int>({x_c, unpadded_x_h, unpadded_x_w}, -10, 10);
-    xt::xarray<float> k = xt::random::randint<int>({k_num, k_c,k_h,k_w}, -10, 10);
+    xt::xarray<float> x = xt::random::randint<int>({x_c, unpadded_x_h, unpadded_x_w}, -5, 5);
+    xt::xarray<float> k = xt::random::randint<int>({k_num, k_c,k_h,k_w}, -5, 5);
     xt::xarray<float> b = xt::random::randint<int>({k_num}, -10, 10);
 
     float* d_x;

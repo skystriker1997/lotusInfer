@@ -20,6 +20,9 @@
 #include <functional>
 #include <iostream>
 #include <fstream>
+#include <mma.h>
+
+// NVIDIA_TF32_OVERRIDE=0
 
 
 #define CUDA_CHECK(err)                                                                                                                         \

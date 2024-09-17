@@ -35,8 +35,8 @@ int main() {
 
     using namespace lotus;
 
-    uint32_t a_w = 499;
-    uint32_t a_h = 499;
+    uint32_t a_w = 512;
+    uint32_t a_h = 512;
 
     float *h_x, *h_a, *h_y, *h_b;
     cudaMallocHost(&h_x, a_w * sizeof(float));

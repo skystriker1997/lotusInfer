@@ -1,7 +1,7 @@
 #pragma once
 
 #include "layer/layer.hpp"
-#include "operator/conv2d.cuh"
+#include "operator/conv2d_tensorcore.cuh"
 
 
 namespace lotus {

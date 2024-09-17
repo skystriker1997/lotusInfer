@@ -44,7 +44,7 @@ namespace lotus {
                 pool.SetStream();
             }
 
-            Fgemva<<<MakeSFgemvaGrid(out_features_), MakeSFgemvaBlock(), 0, pool.Stream()>>>(x.Data(), weight_.Data(), bias_.Data(), y.Data(), out_features_, in_features_, use_bias_, af_);
+            Gemm<<<MakeGemmGrid(x.Dim(0), out_features_), MakeGemmBlock(), 0, pool.Stream()>>>(x.Data(), weight_.Data(), use_bias_, bias_.Data(), y.Data(), x.Dim(0), out_features_, in_features_, af_);
             
         }
         cudaDeviceSynchronize();
@@ -93,7 +93,6 @@ namespace lotus {
         auto output = operands.find(outputs_name[0]);
         CHECK(output != operands.end()) << "linear layer missing the output operand";
 
-        CHECK(input->second->tensor_.DimSize()==2) << "linear layer supports only vector matrix multiplication";
         std::vector<std::shared_ptr<Operand>> inputs = {input->second};
         std::vector<std::shared_ptr<Operand>> outputs = {output->second};
 
