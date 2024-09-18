@@ -10,13 +10,42 @@ int main()
     using namespace lotus;
     using namespace Eigen;
     using MatrixRowMajor = Matrix <float,Dynamic,Dynamic,RowMajor>;
-    int seq = 128;
-    int input_features = 128;
-    int output_features = 128;
+    int seq = 255;
+    int input_features = 255;
+    int output_features = 255;
 
-    MatrixRowMajor input = MatrixXf::Random(seq,input_features);
-    MatrixRowMajor weight = MatrixXf::Random(output_features,input_features);
-    RowVectorXf bias = RowVectorXf::Random(output_features);
+    MatrixRowMajor input = MatrixXf(seq,input_features);
+    MatrixRowMajor weight = MatrixXf(output_features,input_features);
+    RowVectorXf bias = RowVectorXf(output_features);
+
+    for(int i=0; i<seq; ++i) {
+        for(int j=0; j<input_features; ++j) {
+            if((i*j)%2==0) {
+                input(i, j) = -1.f/j+100.f/i;
+            } else {
+                input(i, j) = 1.f/j-100.f/i;
+            }
+            
+        }
+    }
+
+    for(int i=0; i<output_features; ++i) {
+        for(int j=0; j<input_features; ++j) {
+            if((i*j)%2==0) {
+                weight(i, j) = 1.f/j-50.f/i;
+            } else {
+                weight(i, j) = -1.f/j+50.f/i;
+            }            
+        }
+    }
+
+    for(int i=0; i<output_features; ++i) {
+        if(i%2==0) {
+            bias(i) = 1;
+        } else {
+            bias(i) = -1;
+        }
+    }
 
     MatrixRowMajor output = (input*weight.transpose()).rowwise() + bias; 
 
@@ -38,11 +67,14 @@ int main()
         for(uint32_t j=0; j<output_features; j++) {
             float cuda_result = h_c[i*output_features+j];
             float cpu_result = output(i,j);
-            if (std::fabs(cpu_result - cuda_result) / std::fabs(cpu_result) > 0.1) {
-                printf("gemm c[%d][%d] not match, %f vs %f\n", i, j, cpu_result, cuda_result);
+            if (std::fabs(cpu_result - cuda_result) / std::fabs(cpu_result) > 1e-5f) {
+                printf("Matrix C[%d][%d] not match, %f vs %f\n", i, j, cpu_result, cuda_result);
+                return 0;
             }
         }
     }
+
+    printf("Matrix C check OK\n");
 
     return 0;
 }

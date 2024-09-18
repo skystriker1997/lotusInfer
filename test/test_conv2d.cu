@@ -54,17 +54,17 @@ int main()
 {
     using namespace lotus;
 
-    uint32_t padded_x_h = 64;
-    uint32_t padded_x_w = 64;
+    uint32_t padded_x_h = 1023;
+    uint32_t padded_x_w = 1023;
     uint32_t x_c = 3;
-    uint32_t k_num = 16;
+    uint32_t k_num = 17;
     uint32_t k_c = 3;
-    uint32_t k_h = 4;
-    uint32_t k_w = 4;
-    uint32_t stride_h = 4;
-    uint32_t stride_w = 4;;
-    uint32_t padding_h = 0;
-    uint32_t padding_w = 0;
+    uint32_t k_h = 7;
+    uint32_t k_w = 7;
+    uint32_t stride_h = 2;
+    uint32_t stride_w = 2;;
+    uint32_t padding_h = 1;
+    uint32_t padding_w = 1;
 
     uint32_t y_c = k_num;
 
